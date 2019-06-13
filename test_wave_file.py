@@ -92,7 +92,7 @@ class WaveFft():
         plt.show()
         '''
 
-    def stft(self, size, win):
+    def stft(self, size, win, sound_data):
 
         '''
         短区間フーリエ変換
@@ -100,7 +100,8 @@ class WaveFft():
         :return:
         '''
 
-        wave = self.waveLoad()
+        # wave = self.waveLoad()
+        wave = sound_data
         l = len(wave) # 入力信号の長さ
 
         # step：シフト幅は切り出す幅の半分とすることが多い

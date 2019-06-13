@@ -52,8 +52,8 @@ class beamforming(SimulationEnvs):
             sound_method = config['sound']['sound_method']
             sound_r = float(config['sound']['sound_r'])
             sound_dir = float(config['sound']['sound_dir'])
-            wave_data = config['sound']['wave_data']
-            self.sound_data_func(wave_data, sound_method, sound_r, sound_dir)
+            self.wave_data = config['sound']['wave_data']
+            self.sound_data_func(self.wave_data, sound_method, sound_r, sound_dir)
             print('#Success parse config param')
 
             self.freq_list = np.fft.rfftfreq(self.FFT_sample_num, d=1. / self.w_sampling_rate)
@@ -75,8 +75,8 @@ class beamforming(SimulationEnvs):
             print('#Data input by othet method.')
             print('class variabel of sound data is self.sound_data')
 
-    def steering_vector(self):
-        freq_array = self.freq_list
+    def steering_vector(self, freq_array):
+        # freq_array = self.freq_list
         freq_num = freq_array.shape[0]
         # print(freq_num)
         temp_ss_num = len(self.ss_theta_list)
