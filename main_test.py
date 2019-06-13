@@ -34,6 +34,7 @@ if __name__ == '__main__':
     direct_sound_file_name = '../Experiment/190509/Test_wav/only_direct2.wav'
     direct_fft = WaveFft(direct_sound_file_name)
     direct_stft_data = direct_fft.stft(size, hammingWindow)
+
     for j in second_list:
         direct_x = direct_fft.separateSound(direct_stft_data, second, j, 1, False)
         print(direct_x.shape)

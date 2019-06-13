@@ -17,11 +17,13 @@ class RecodeSound():
     def recodeSound(self):
         chunk = 1024
         FORMAT = pyaudio.paInt16
-        CHANNELS = 1
+        CHANNELS = 6
         RATE = 44100
-        RECODE_SECONDS = 2
+        RECODE_SECONDS = 5
+        index = 3
+        file_path = 'output.wav'
 
-        threshold = 3000  # しきい値
+        threshold = 10  # しきい値
 
         p = pyaudio.PyAudio()
 
@@ -29,51 +31,32 @@ class RecodeSound():
                         channels = CHANNELS,
                         rate = RATE,
                         input = True,
+                        input_device_index = index,
                         frames_per_buffer = chunk
                         )
-        cnt = 0
 
-        while True:
-            # 音を読む感じであれば、おまじないてきだね
+        print("recording start...")
+
+        # 録音処理
+        frames = []
+        for i in range(0, int(RATE/chunk * RECODE_SECONDS)):
             data = stream.read(chunk)
-            # bufferからarrayに変換
-            x = np.frombuffer(data, dtype="int16")/32768.0
+            frames.append(data)
 
-            '''フーリエ変換して周波数領域になおしてみる'''
-            f = np.fft.fft(x)
+        print("recording end...")
 
-            a = [np.asscalar(i) for i in x]
-
-            print(a[0])
-
-            if x.max() > threshold:
-                filename = datetime.today().strftime("%Y%m%d%H%M%S") + ".wav"
-                print(cnt, filename)
-
-                all = []
-                all.append(data)
-                for i in range(0, int(RATE / chunk * int(RECODE_SECONDS))):
-                    data = stream.read(chunk)
-                    all.append(data)
-                data = b''.join(all)
-
-                out = wave .open(filename, 'w')
-                out.setnchannels(CHANNELS)
-                out.setsampwidth(2)
-                out.setframerate(RATE)
-                out.writeframes(data)
-                out.close()
-
-                print("saved.")
-
-                cnt += 1
-            if cnt > 5:
-                break
-
-        # stop stream
+        # 録音修了処理
+        stream.stop_stream()
         stream.close()
-        # close pyaudio
         p.terminate()
+
+        # 録音データをファイルに保存
+        wav = wave.open(file_path, 'wb')
+        wav.setnchannels(CHANNELS)
+        wav.setsampwidth(p.get_sample_size(FORMAT))
+        wav.setframerate(RATE)
+        wav.writeframes(b''.join(frames))
+        wav.close()
 
 if __name__ == '__main__':
     recode = RecodeSound()
