@@ -1,49 +1,89 @@
-#coding:utf-8
+# coding:utf-8
 import numpy as np
-from matplotlib import pyplot as plt
-from scipy import signal
-from test_wave_file import WaveFft
-import scipy.signal
+import math
+# import scipy
+# from matplotlib import pyplot as plt
 
 from beamforming import beamforming
+from shape_from_sound import ShapeFromSound
 
-def executeBeamForming():
+
+def main(true_direction, sign='plus'):
     bm = beamforming('./config.ini')
-    use_data = makeUsingSound(bm.sound_data, bm.w_sampling_rate, 10, 1, 4, 2)
-    frq, t, Pxx = scipy.signal.stft(bm.sound_data, bm.w_sampling_rate)
-    # print(frq.shape, t.shape, Pxx.shape)
-    direction_data = np.zeros((360, int(t.shape[0])), dtype=np.complex) #  角度×時間のデータ
-    # Pxx = 10 * np.log(np.abs(Pxx)) #対数表示に直す
-    bm.steering_vector(frq)
-    for i in range(500):
-        bm_result_array, bms = bm.beamformer_localization(Pxx[:, :, i])
-        direction_data[:, i] = bm_result_array.sum(axis=1)
+    sfs = ShapeFromSound('./config.ini')
+    file_path = '../_exp/190612/test_data/'
+    r = np.zeros((len(sfs.ss_list), len(bm.odigin_freq_list)), dtype=np.complex)
+    for i, name in enumerate(sfs.ss_list):
+        print(name)
+        if name == -0.25:
+            data_path = 'left_25'
+        elif name == -0.15:
+            data_path = 'left_15'
+        elif name == 0.15:
+            data_path = 'right_15'
+        elif name == 0.25:
+            data_path = 'right_25'
+        else:
+            data_path = 0
+            print("ERROR")
+        if sign == 'plus':
+            wave_data = file_path + data_path + '_' + str(true_direction) + '.wav'
+        else:
+            wave_data = file_path + data_path + '_m' + str(true_direction) + '.wav'
+        print('===============================================')
+        print(wave_data)
+        print('===============================================')
+        bm_data, direction_data, intensity = bm.executeBeamForming(wave_data, 100)
+        r[i, :] = intensity
+        # bm.checkDOA()
+    print(r)
+    theta_list = []
+    rho_list = []
+    normal_list = np.zeros((4,2), dtype=np.complex)
+    for i in range(r.shape[1]):
+        n = sfs.shapeFromSound(r[:, i])
+        # print(n)
+        normal = n / np.sqrt(n[0] ** 2 + n[1] ** 2)
+        theta = math.degrees(math.atan(normal[0]/normal[1]))
+        rho = np.sqrt(n[0] ** 2 + n[1] ** 2)
+        print("+++++++++++++++++++++++++++++++++++++++")
+        print('surface normal:', normal, 'theta:', theta, 'rho:', rho)
+        print("+++++++++++++++++++++++++++++++++++++++")
+        theta_list.append(theta)
+        rho_list.append(rho)
+        normal_list[i, :] = normal
+    return theta_list, rho_list, normal_list, r
 
-    print(direction_data.shape)
-    # plot
-    '''
-    X, Y = np.meshgrid(t,range(360))
-    print(X.shape, Y.shape)
-    plt.contourf(X, Y, direction_data, cmap="jet")
-    plt.xlim(0, 1.5)
-    #plt.plot(t, bm_result.T)
-    plt.show()
-    '''
-
-    return direction_data
-
-def makeUsingSound(sound_data, rate, interval_time, want_data_time, combine_num, start_time):
-    print("Frame Rate : " , rate)
-    print("Sound Data : ", sound_data.shape)
-
-    use_sound_data = np.zeros((combine_num, sound_data.shape[0], want_data_time * rate), dtype=np.complex)
-    for i in range(combine_num):
-        use_sound_data[i, :, :] = sound_data[:, start_time: start_time + (want_data_time * rate)]
-
-        start_time += interval_time * rate
-
-    print('sccsess make use data :', use_sound_data.shape)
-    return  use_sound_data
 
 if __name__ == '__main__':
-    executeBeamForming()
+
+    '''ini save data'''
+    direction_list = [0, 10, 20, 30, 40]
+    theta_array = np.zeros((4,9), dtype=np.float)
+    rho_array = np.zeros_like(theta_array)
+    normal_array = np.zeros((4, 2, 9), dtype=np.complex)
+    intensity_array = np.zeros((4, 4, 9), dtype=np.float)
+
+    '''main'''
+    for i, name in enumerate(direction_list):
+        theta_list, rho_list, normal_list, intensity_list = main(name)
+        theta_array[:, i] = theta_list
+        rho_array[:, i] = rho_list
+        normal_array[:, :, i] = normal_list
+        intensity_array[:, :, i] = intensity_list
+    for i, name in enumerate(direction_list[1:]):
+        theta_list, rho_list, normal_list, intensity_list = main(name, sign='minus')
+        theta_array[:, i+5] = theta_list
+        rho_array[:, i+5] = rho_list
+        normal_array[:, :, i+5] = normal_list
+        intensity_array[:, :, i+5] = intensity_list
+    # print(theta_array)
+    true_list = [0, 10, 20, 30, 40, -10, -20, -30, -40]
+    error_array = theta_array - true_list * np.ones_like(theta_array)
+    print(error_array)
+
+    '''save data'''
+    np.save('../_array/theta_array', theta_array)
+    np.save('../_array/rho_array', rho_array)
+    np.save('../_array/normal_array', normal_array)
+    np.save('../_array/intensity_array', intensity_array)
