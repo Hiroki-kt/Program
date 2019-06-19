@@ -17,7 +17,6 @@ class SimulationEnvs(object):
             theta = mic_id / mic_num * 360
             mic_pos_list.append(position(mic_r, theta))
         print('#Create circular microphone array position')
-        #print(len(mic_pos_list), mic_pos_list[0].pos())
         return mic_pos_list
 
     def ss_positions(self, radius, min_theta, max_theta, theta_interval):
@@ -27,6 +26,7 @@ class SimulationEnvs(object):
         for theta in theta_list:
             ss_pos_list.append(position(radius, theta))
         print('#Create temporal sound source position list')
+        # print("theta 0 's direction is", ss_pos_list[0].pos())
         return theta_list, ss_pos_list
 
     def wave_read_func(self, wave_path):
@@ -42,6 +42,7 @@ class SimulationEnvs(object):
             elif w_sample_width == 4:
                 data = np.frombuffer(data, dtype='int32').reshape((w_frames_num, w_channel)).T
 
+            '''
             print('*****************************')
             print('Read wave file:', wave_path)
             print('Mic channel num:', w_channel)
@@ -49,6 +50,7 @@ class SimulationEnvs(object):
             print('Frame_num:', w_frames_num, ' time:', w_frames_num / float(w_sanpling_rate))
             print('sound data shape:', data.shape)
             print('*****************************')
+            '''
 
             return data, w_channel, w_sanpling_rate, w_frames_num
 
@@ -74,9 +76,9 @@ class SimulationEnvs(object):
         self.w_channel = len(self.mic_pos_list)
         return data
 
-    def freq_id(self):
-        id_min = np.abs(self.freq_list - self.freq_min).argmin()
-        id_max = np.abs(self.freq_list - self.freq_max).argmin()
+    def freq_id(self, freq_list):
+        id_min = np.abs(freq_list - self.freq_min).argmin()
+        id_max = np.abs(freq_list - self.freq_max).argmin()
         return id_min, id_max
 
 
