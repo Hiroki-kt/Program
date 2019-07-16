@@ -1,10 +1,11 @@
-#coding:utf-8
+# coding:utf-8
 import numpy as np
 import wave
-import os
-import sys
-import configparser
+# import os
+# import sys
+# import configparser
 import math
+
 
 class SimulationEnvs(object):
     def __init__(self):
@@ -54,7 +55,7 @@ class SimulationEnvs(object):
 
             return data, w_channel, w_sanpling_rate, w_frames_num
 
-    def create_mic_input(self, sound_r, sound_dir, ch=1):
+    def create_mic_input(self, w_sampling_rate, sound_data, w_frames_num, sound_r, sound_dir, ch=1):
         s_theta = sound_dir * math.pi / 180.
         s_x = sound_r * math.cos(s_theta)
         s_y = sound_r * math.sin(s_theta)
@@ -63,17 +64,18 @@ class SimulationEnvs(object):
         for mic in self.mic_pos_list:
             mx, my = mic.pos()
             mic2sound_dis = math.sqrt((mx - s_x) ** 2 + (my - s_y) ** 2)
-            delay_point = round((mic2sound_dis - center2sound_dis) / self.sound_speed * self.w_sampling_rate)
+            delay_point = round((mic2sound_dis - center2sound_dis) / self.sound_speed * w_sampling_rate)
             delay_list.append(delay_point)
 
         delay_min, delay_max = min(delay_list), max(delay_list)
-        target_sound_data = self.sound_data[ch - 1, :]
-        sound_fnum = self.w_frames_num + delay_max - delay_min
+        target_sound_data = sound_data[ch - 1, :]
+        sound_fnum = w_frames_num + delay_max - delay_min
         data = np.zeros((len(self.mic_pos_list), sound_fnum))
         for i in range(len(self.mic_pos_list)):
-            data[i, -self.w_frames_num + delay_list[i] + delay_min:self.w_frames_num + delay_list[i] - delay_min] = target_sound_data
-        self.w_frames_num = sound_fnum
-        self.w_channel = len(self.mic_pos_list)
+            data[i, -w_frames_num + delay_list[i] + delay_min:w_frames_num + delay_list[
+                i] - delay_min] = target_sound_data
+        # w_frames_num = sound_fnum
+        # w_channel = len(self.mic_pos_list)
         return data
 
     def freq_id(self, freq_list):
@@ -84,10 +86,10 @@ class SimulationEnvs(object):
 
 class position(object):
     def __init__(self, r, theta):
-        #r[m], theta[deg]
+        # r[m], theta[deg]
         theta = theta * math.pi / 180
-        self.x = r*math.cos(theta)
-        self.y = r*math.sin(theta)
+        self.x = r * math.cos(theta)
+        self.y = r * math.sin(theta)
 
     def pos(self):
         return self.x, self.y

@@ -1,0 +1,296 @@
+# coding:utf-8
+from matplotlib import pyplot as plt
+import numpy as np
+import math
+from datetime import datetime
+import os
+
+
+def calculate_e_theta(psi_deg, height=False, middle=None, beta_plot=False):
+    l_1 = 10
+    l_2 = 20
+    theta = 90
+    kappa = 0.3
+    beam_sum = 0
+    for beta_s in range(90):
+        beam_sum += math.cos(math.radians(beta_s))
+        # print(math.cos(math.radians(i)/1.5))
+    # print(sigma * 2)
+    # alpha_rate = 1 / (beam_sum / 2)
+    # print('alpha:', alpha_rate)
+    beta = np.arange(-89, 90, 1)
+    if height:
+        Q = np.empty((0, 3), dtype=np.float)
+        e_theta = 0
+        for beta_s in beta:
+            tan_beta = math.tan(math.radians(beta_s))
+            x = (20 * tan_beta - 5) / (1 + tan_beta * math.tan(math.radians(psi_deg)))
+            y = -1 * math.tan(math.radians(psi_deg)) * x + 20
+            # print('x, y:', x, y)
+            if x ** 2 + (y - l_2) ** 2 < l_2 ** 2:
+                Q = np.append(Q, np.array([[x, y, beta_s]]), axis=0)
+                if beta_plot:
+                    plt.scatter(x, y)
+        if beta_plot:
+            plt.scatter(-5, 0, label='$S_1$')
+            plt.scatter(5, 0, label='Mic')
+            plt.xlim(-20, 20)
+            plt.ylim(-5, 40)
+            plt.show()
+        # print('Q:', len(Q))
+        psi_deg = math.radians(psi_deg)
+        for j, beta_s in enumerate(Q[:, 2]):
+            g_beta_s = g_directivity_speaker(beta_s)
+            s_q = np.array([Q[j, 0] + l_1 / 2, Q[j, 1]])
+            n = np.array([- 1 * math.sin(psi_deg), -1 * math.cos(psi_deg)])
+            s_q = -1 * s_q
+            cos_beta_s = (s_q @ n) / (np.sqrt(n[0] ** 2 + n[1] ** 2) * np.sqrt(s_q[0] ** 2 + s_q[1] ** 2))
+            # print('cos_beta_s', cos_beta_s)
+            if cos_beta_s < 0:
+                cos_beta_s = 0.001
+            e_theta += kappa * cos_beta_s * g_beta_s
+            # print('e_h', e_theta)
+        return e_theta
+    
+    if middle:
+        rho = middle
+        Q = np.empty((0, 3), dtype=np.float)  # 反射点Q
+        e_middle = 0
+        for beta_s in beta:
+            tan_beta = math.tan(math.radians(beta_s))
+            x = (20 * tan_beta - 5) / (1 + tan_beta * math.tan(math.radians(psi_deg)))
+            y = -1 * math.tan(math.radians(psi_deg)) * x + 20
+            # print('x, y:', x, y)
+            if x ** 2 + (y - l_2) ** 2 < l_2 ** 2:
+                Q = np.append(Q, np.array([[x, y, beta_s]]), axis=0)
+                if beta_plot:
+                    plt.scatter(x, y)
+        # if beta_plot:
+        #     plt.scatter(-5, 0, label='$S_1$')
+        #     plt.scatter(5, 0, label='Mic')
+        #     plt.xlim(-20, 20)
+        #     plt.ylim(-5, 40)
+        #     plt.show()
+        # print('Use reflection point:', Q.shape)
+        psi_deg = math.radians(psi_deg)
+        cos_beta_s_list = []
+        cos_beta_r_list = []
+        for j, beta_s in enumerate(Q[:, 2]):
+            g_beta_s = g_directivity_speaker(beta_s)
+            s_q = np.array([Q[j, 0] + l_1 / 2, Q[j, 1]])
+            n = np.array([- 1 * math.sin(psi_deg), -1 * math.cos(psi_deg)])
+            # n = np.array([Q[j, 0] - math.sin(psi_deg), Q[j, 1] - math.cos(psi_deg)])
+            cos_beta_s = kappa * (-1 * s_q @ n) / (np.sqrt(n[0] ** 2 + n[1] ** 2) * np.sqrt(s_q[0] ** 2 + s_q[1] ** 2))
+            cos_beta_s_list.append(cos_beta_s)
+            r = s_q + 2 * ((-1 * s_q) @ n) * n  # 反射の式
+            # r = r/np.sqrt(r[0] ** 2 + r[1] ** 2)
+            q_m = np.array([l_1 / 2 - Q[j, 0], - Q[j, 1]])
+            cos_beta_r = (r @ q_m) / (np.sqrt(r[0] ** 2 + r[1] ** 2) * np.sqrt(q_m[0] ** 2 + q_m[1] ** 2))
+            # print('cos_beta_r', cos_beta_r)
+            if cos_beta_r < 0:
+                cos_beta_r = 0.001
+            '''e_beta_sが負になることがある。少し考えなければ、一旦は負になったら0にめちゃくちゃ近づける'''
+            cos_beta_r = cos_beta_r ** rho
+            cos_beta_r_list.append(cos_beta_r)
+            e_beta_s = g_beta_s * cos_beta_r
+            # print('e_m:', e_beta_s)
+            e_middle += e_beta_s
+            if beta_plot:
+                # plt.plot([Q[j, 0], n[0]], [Q[j, 1], n[1]])
+                # plt.scatter(n[0], n[1])
+                plt.plot([Q[j, 0], Q[j, 0] + r[0]], [Q[j, 1], Q[j, 1] + r[1]])
+                plt.plot([- 1 * l_1 / 2, - 1 * l_1 / 2 + s_q[0]], [0, s_q[1]])
+        if beta_plot:
+            plt.scatter(-5, 0, label='$S_1$')
+            plt.scatter(5, 0, label='Mic')
+            plt.xlim(-20, 20)
+            plt.ylim(-5, 40)
+            plt.show()
+            # e_theta += kappa * e_beta
+        plt.plot(Q[:, 2], cos_beta_s_list, label='s')
+        plt.plot(Q[:, 2], cos_beta_r_list, label='r')
+        plt.legend()
+        plt.title(str(math.degrees(psi_deg)))
+        plt.show()
+        # print('e_m', e_m)
+        return e_middle
+    
+    else:
+        # 点と直線の距離
+        r = l_2 / math.sqrt((math.tan(math.radians(psi_deg))) ** 2 + 1)
+        # ２次方程式の解の公式
+        a = 1 + math.tan(math.radians(psi_deg)) ** 2
+        b = 2 * -1 * math.tan(math.radians(psi_deg)) * l_2
+        c = -1 * (r ** 2 - l_2 ** 2)
+        x_1, x_2 = solve_quadratic_equation(a, b, c)
+        if abs(x_1 - x_2) < 1:
+            y = -1 * math.tan(math.radians(psi_deg)) * x_1 + l_2
+            x = x_1
+        else:
+            print("ERROR : not heavy solution")
+            return 0
+        
+        m = check_point_order(x, -1 * l_1 / 2)
+        s = theta - math.degrees(math.atan(y / m))
+        print('s:', s)
+        print('x, y ', x, y)
+        print(math.degrees(math.radians(theta) - math.atan(y / m)))
+        e_theta = math.cos((math.radians(theta) - math.atan(y / m)))
+        
+        return e_theta, x, y
+
+
+def g_directivity_speaker(beta_s):
+    # g_beta_s = math.cos(math.radians(beta_s))
+    g_beta_s = math.exp(-1 * (beta_s ** 2) / (2 * 45 ** 2))
+    return g_beta_s
+
+
+def solve_quadratic_equation(a, b, c):
+    d = (b ** 2 - 4 * a * c) ** (1 / 2)
+    x_1 = (-b + d) / (2 * a)
+    x_2 = (-b - d) / (2 * a)
+    
+    return x_1, x_2
+
+
+def check_use_point(l_2, x_1, x_2, y_1, y_2):
+    r_1 = x_1 ** 2 + (y_1 - l_2) ** 2
+    r_2 = x_2 ** 2 + (y_2 - l_2) ** 2
+    # print(r_1, r_2)
+    if r_1 > l_2 ** 2:
+        if r_2 > l_2 ** 2:
+            print("ERROR don't have Q point")
+            return
+        else:
+            return x_2, y_2
+    else:
+        if r_2 > l_2 ** 2:
+            return x_1, y_1
+        else:
+            if x_1 == x_2:
+                return x_1, y_1
+            else:
+                x = [x_1, x_2]
+                y = [y_1, y_2]
+                return x, y
+
+
+def check_point_order(x, l):
+    if x > l:
+        return x - l
+    elif x < l:
+        return l - x
+    else:
+        print("ERROR mother is 0")
+        return 0
+
+
+def low_e(ene_0, single=None, multi_plot=False):
+    if single:
+        print('***********************************')
+        print('【' + str(single) + '】')
+        e_theta, x, y = calculate_e_theta(single)
+        print('e_theta', e_theta)
+    else:
+        psi_deg_list = np.arange(-40, 41, 10)
+        e_list = []
+        for psi_deg in psi_deg_list:
+            e_theta, x, y = calculate_e_theta(psi_deg)
+            if multi_plot:
+                z = np.arange(-20, 20)
+                plt.plot(z, -1 * math.tan(math.radians(psi_deg)) * z + 20, label='wall')
+                plt.scatter(x, y)
+                plt.scatter(-5, 0, label='$S_1$')
+                plt.scatter(5, 0, label='Mic')
+                plt.xlim(-20, 20)
+                plt.ylim(-5, 40)
+                plt.title(str(psi_deg))
+                plt.show()
+            ene_l = e_theta + ene_0
+            e_list.append(ene_l)
+        return e_list
+
+
+def middle_e(rho, single=None):
+    print('Middle freq')
+    if single:
+        print('***********************************')
+        print('【' + str(single) + '】')
+        e_theta = calculate_e_theta(single, middle=True)
+        print('e_theta', e_theta)
+    else:
+        psi_deg_list = np.arange(-40, 41, 10)
+        e_list = []
+        for psi_deg in psi_deg_list:
+            e_mid = calculate_e_theta(psi_deg, middle=rho)
+            e_list.append(e_mid)
+        return e_list
+
+
+def hight_e(single=None):
+    print('Height freq')
+    if single:
+        print('***********************************')
+        print('【' + str(single) + '】')
+        e_theta = calculate_e_theta(single, height=True)
+        print('e_theta', e_theta)
+    else:
+        psi_deg_list = np.arange(-40, 41, 10)
+        e_list = []
+        for psi_deg in psi_deg_list:
+            e_theta = calculate_e_theta(psi_deg, height=True)
+            ene_h = e_theta
+            e_list.append(ene_h)
+        return e_list
+
+
+def my_makedirs(path):
+    if not os.path.isdir(path):
+        os.makedirs(path)
+
+
+if __name__ == '__main__':
+    # middle_e(0.5)
+    sigma = 0
+    for i in range(90):
+        sigma += math.cos(math.radians(i))
+    alpha = 1 / sigma
+    
+    e_0 = alpha * math.cos((math.radians(90)))  # 直接音も入れておく。
+    # e_l = low_e(e_0)
+    e_m = middle_e(0.5)
+    e_h = hight_e()
+    
+    freq = np.arange(100, 2000)
+    e = math.e
+    # gamma_l = 1 - 1 / (1 + e ** (-1 * (freq/15 - 35/3)))
+    gamma_h = 0.8 * 1 / (1 + e ** (-1 * (freq / 150 - 25 / 3)))
+    gamma_m = 1 - gamma_h
+    
+    psi = np.arange(-40, 41, 10)
+    model_array = np.zeros((9, len(freq)), dtype=float)
+    plt.figure(figsize=(5, 7))
+    for i, name in enumerate(psi):
+        print('++++++++++++++++++++++++++++++++++')
+        print('【' + str(name) + '】')
+        # print(e_l[i])
+        print(e_m[i])
+        print(e_h[i])
+        E = (gamma_m * e_m[i] + gamma_h * e_h[i])
+        model_array[i, :] = E
+        np.zeros((9, len(freq)), dtype=float)
+        plt.plot(freq, E, label=str(name))
+    # plt.title('model difference about $\psi$')
+    # plt.ylim(0.38, 0.68)
+    plt.xlim(100, 2000)
+    plt.xlabel('freq[Hz]')
+    plt.ylabel('amp')
+    plt.legend()
+    plt.show()
+    
+    array_path = '../_array/19' + datetime.today().strftime("%m%d")
+    my_makedirs(array_path)
+    file_name = '/' + datetime.today().strftime("%H%M%S")
+    np.save(array_path + file_name + '_model_array', model_array)
+    print('Saved')

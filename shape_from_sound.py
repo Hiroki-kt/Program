@@ -6,7 +6,6 @@ import scipy
 # from matplotlib import pyplot as plt
 
 
-
 class ShapeFromSound:
     def __init__(self, config_path):
         super().__init__()
@@ -37,7 +36,7 @@ class ShapeFromSound:
             self.s = s
             print("make s data set", s)
 
-    def shapeFromSound(self, r):
+    def shape_from_sound(self, r):
 
         if self.ss_pos.shape[0] == 3:
             # 音源数が三の場合は等式で連立方程式で解ける
@@ -56,3 +55,4 @@ class ShapeFromSound:
             print('Xtil:', Xtil, 'A:', A, 'b:', b)
             surface_normal = np.dot(scipy.linalg.pinv(A), b)
             return surface_normal
+

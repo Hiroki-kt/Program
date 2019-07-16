@@ -4,15 +4,15 @@ import math
 # import scipy
 # from matplotlib import pyplot as plt
 
-from beamforming import beamforming
+from beamforming import BeamForming
 from shape_from_sound import ShapeFromSound
 
 
 def main(true_direction, sign='plus'):
-    bm = beamforming('./config.ini')
+    bm = BeamForming('./config.ini')
     sfs = ShapeFromSound('./config.ini')
     file_path = '../_exp/190612/test_data/'
-    r = np.zeros((len(sfs.ss_list), len(bm.odigin_freq_list)), dtype=np.complex)
+    r = np.zeros((len(sfs.ss_list), len(bm.origin_freq_list)), dtype=np.complex)
     for i, name in enumerate(sfs.ss_list):
         print(name)
         if name == -0.25:
@@ -33,7 +33,7 @@ def main(true_direction, sign='plus'):
         print('===============================================')
         print(wave_data)
         print('===============================================')
-        bm_data, direction_data, intensity = bm.executeBeamForming(wave_data, 100)
+        bm_data, direction_data, intensity = bm.execute_beam_forming(wave_data, 100)
         r[i, :] = intensity
         # bm.checkDOA()
     print(r)
@@ -41,7 +41,7 @@ def main(true_direction, sign='plus'):
     rho_list = []
     normal_list = np.zeros((4,2), dtype=np.complex)
     for i in range(r.shape[1]):
-        n = sfs.shapeFromSound(r[:, i])
+        n = sfs.shape_from_sound(r[:, i])
         # print(n)
         normal = n / np.sqrt(n[0] ** 2 + n[1] ** 2)
         theta = math.degrees(math.atan(normal[0]/normal[1]))
@@ -53,6 +53,8 @@ def main(true_direction, sign='plus'):
         rho_list.append(rho)
         normal_list[i, :] = normal
     return theta_list, rho_list, normal_list, r
+
+
 
 
 if __name__ == '__main__':
