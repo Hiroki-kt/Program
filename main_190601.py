@@ -1,9 +1,6 @@
 # coding:utf-8
 import numpy as np
 import math
-# import scipy
-# from matplotlib import pyplot as plt
-
 from beamforming import BeamForming
 from shape_from_sound import ShapeFromSound
 

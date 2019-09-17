@@ -6,7 +6,6 @@ import sys
 import wave
 import matplotlib.pyplot as plt
 import scipy.signal
-from datetime import datetime
 import numpy as np
 
 from simulation_envs import SimulationEnvs
@@ -77,18 +76,18 @@ class BeamForming(SimulationEnvs):
             sound_data = np.delete(sound_data, [0, 5], 0)
         # use_data = reshape_sound_data(sound_data, w_sampling_rate, 0, 14, 1, 0)
         # use_data = np.reshape(use_data, (4, -1))
-        plt.specgram(sound_data[0, :], Fs=w_sampling_rate)
-        plt.show()
+        # plt.specgram(sound_data[0, :], Fs=w_sampling_rate)
+        # plt.show()
         # use_data = reshape_sound_data_freq_time(sound_data, w_sampling_rate, 0.4, 0.1, 1.5, 100, 2500, 20)
         use_data = sound_data[:, int(2 * w_sampling_rate):]
         frq, time, Pxx = scipy.signal.stft(use_data, w_sampling_rate)
-        self.steering_vector(frq, 1, use_data.shape[0])
+        tf = self.steering_vector(frq, 1, use_data.shape[0])
         # freq_time = (2000 - 100) / (14 - 0) * time + 100
         bm_time = np.zeros((len(frq), len(time)), dtype=np.float)
         # print(bm_time.shape)
         for t in range(len(time)):
             # id_time = np.abs(time - dis_time).argmin()
-            bm_result_array, bms = self.beam_forming_localization(Pxx[:, :, t], frq)
+            bm_result_array, bms = self.beam_forming_localization(Pxx[:, :, t], tf, frq)
             if uniform_dist:
                 bm_result_array[:uniform_dist[0], :] = 0
                 bm_result_array[uniform_dist[1]:, :] = 0
@@ -156,16 +155,17 @@ class BeamForming(SimulationEnvs):
             tf[k, :, :] = np.exp(freq_repeat_array * dis_diff_repeat_array)
             # beam_conf[k,:,:] = tf[k,:,:]/ ()
         print('#Create transfer funtion', tf.shape)
-        self.tf = tf.conj()  # 360*257*8
-        for k in range(combine_num):
-            new_tf[:, :, :, k] = self.tf
-        self.new_tf = new_tf
+        tf = tf.conj()  # 360*257*8
+        if combine_num == 1:
+            return tf
+        else:
+            for k in range(combine_num):
+                new_tf[:, :, :, k] = tf
+            return new_tf
     
-    def beam_forming_localization(self, f_data, freq_list):
+    def beam_forming_localization(self, f_data, tf, freq_list):
         f_data = f_data.transpose(1, 0)
-        # tf = self.tf[:, self.freq_min_id:self.freq_max_id + 1, :]#360*257*8
-        tf = self.tf
-        # tf = self.new_tf
+        # tf = tf[:, self.freq_min_id:self.freq_max_id + 1, :]#360*257*8
         freq_min_id, freq_max_id = self.freq_id(freq_list)
         tf[:, :freq_min_id, :] = tf[:, :freq_min_id, :] * 0
         tf[:, freq_max_id:, :] = tf[:, freq_max_id:, :] * 0
@@ -177,23 +177,45 @@ class BeamForming(SimulationEnvs):
         # print("Succsess beamforming", bmp.shape)
         return bmp, bms  # 360*257
     
-    def beam_forming_separation(self, max_theta, fdata):
-        tf = self.tf[int(max_theta), :, :]
-        sep = tf * fdata.T  # 要素計算
-        # sep_signal = np.concatenate((sep,sep.conj()),axis=0)
-        return sep
-    
     def direction_of_arrival(self, sound_data, w_sampling_rate, w_channel):
         frq, time, Pxx = scipy.signal.stft(sound_data, w_sampling_rate)
-        self.steering_vector(frq, 1, w_channel)
+        tf = self.steering_vector(frq, 1, w_channel)
         doa_data = []
         for t in range(time.shape[0]):
-            bm_result_array, bms = self.beam_forming_localization(Pxx[:, :, t], frq)
+            bm_result_array, bms = self.beam_forming_localization(Pxx[:, :, t], tf, frq)
             doa_data.append(np.argmax(bm_result_array.sum(axis=1)))
             print(t)
         
         plt.plot(time, doa_data)
         plt.show()
+        
+    def create_mic_input(self, w_sampling_rate, sound_data, w_frames_num, sound_r, sound_dir, ch=1):
+        s_theta = sound_dir * math.pi / 180.
+        s_x = sound_r * math.cos(s_theta)
+        s_y = sound_r * math.sin(s_theta)
+        center2sound_dis = math.sqrt(s_x ** 2 + s_y ** 2)
+        delay_list = []
+        for mic in self.mic_pos_list:
+            mx, my = mic.pos()
+            mic2sound_dis = math.sqrt((mx - s_x) ** 2 + (my - s_y) ** 2)
+            delay_point = round((mic2sound_dis - center2sound_dis) / self.sound_speed * w_sampling_rate)
+            delay_list.append(delay_point)
+
+        delay_min, delay_max = min(delay_list), max(delay_list)
+        target_sound_data = sound_data[ch - 1, :]
+        sound_fnum = w_frames_num + delay_max - delay_min
+        data = np.zeros((len(self.mic_pos_list), sound_fnum))
+        for n in range(len(self.mic_pos_list)):
+            data[n, -w_frames_num + delay_list[n] + delay_min:w_frames_num + delay_list[
+                n] - delay_min] = target_sound_data
+        # w_frames_num = sound_fnum
+        # w_channel = len(self.mic_pos_list)
+        return data
+
+    def freq_id(self, freq_list):
+        id_min = np.abs(freq_list - self.freq_min).argmin()
+        id_max = np.abs(freq_list - self.freq_max).argmin()
+        return id_min, id_max
     
     def execute_beam_forming(self, wave_path, direction, plot=False):
     
@@ -213,13 +235,13 @@ class BeamForming(SimulationEnvs):
         print(frq.shape, time.shape, Pxx.shape)
         direction_data = np.zeros((combine_num, 360, int(time.shape[0])), dtype=np.complex)  # 実験データ×角度×時間のデータ
         # Pxx = 10 * np.log(np.abs(Pxx)) #対数表示に直す
-        self.steering_vector(frq, combine_num, w_channel)
+        tf = self.steering_vector(frq, combine_num, w_channel)
         for t in range(time.shape[0]):
             '''ここで特定の周波数領域だけ取るのありかも'''
             for j, origin_freq in enumerate(self.origin_freq_list):
                 freq_id = np.abs(frq - origin_freq).argmin()
                 # print(freq_id)
-                bm_result_array, bms = self.beam_forming_localization(Pxx[j, :, :, t], frq)
+                bm_result_array, bms = self.beam_forming_localization(Pxx[j, :, :, t], tf, frq)
                 # print(bm_result_array.shape)
                 direction_data[j, :, t] = np.mean(bm_result_array[:, freq_id - 3: freq_id + 3], axis=1)
         
@@ -288,30 +310,4 @@ def my_makedirs(path):
 
 if __name__ == '__main__':
     bm = BeamForming('./config.ini')
-    # file_path = '../_exp/190619/test_data/left_10_20_-10_2000.wav'
-    # min_theta = 45
-    # max_theta = 135
-    # bm.check_beam_forming(file_path, 0)
-    direction_list = [-40, -30, -20, -10, 0, 10, 20, 30, 40]
-    file_path = '../_exp/190630/recode_data/dis_40/'
-    # file_name = 'left_10_20_' + str(direction_list[0]) + '_2000.wav'
-    file_name = str(direction_list[0]) + '.wav'
-    print('【' + file_path + str(direction_list[0]) + '】')
-    wave_data = file_path + file_name
-    bm_list, time_list = bm.check_beam_forming(wave_data, direction_list[0], semiauto_data=True)
-    bm_array = np.zeros((len(direction_list), len(time_list)))
-    bm_array[0, :] = bm_list
-    for i, name in enumerate(direction_list[1:]):
-        print('【' + str(name) + '】')
-        # file_name = 'left_10_20_' + str(name) + '_2000.wav'
-        file_name = str(name) + '.wav'
-        wave_data = file_path + file_name
-        bm_list, time_list = bm.check_beam_forming(wave_data, name, semiauto_data=True)
-        bm_array[i+1, :] = bm_list
-    
-    array_path = '../_array/19' + datetime.today().strftime("%m%d")
-    my_makedirs(array_path)
-    file_name = '/' + datetime.today().strftime("%m%d")
-    np.save(array_path + file_name + '_dis40_bm_time', bm_array)
-    np.save(array_path + file_name + '_dis40_time', time_list)
-    print('Saved')
+

@@ -4,7 +4,7 @@ from beamforming import BeamForming
 from shape_from_sound import ShapeFromSound
 
 
-def create_amp_data(self, true_direction, origin_freq_list, sign='plus', check_spectrogram=False):
+def create_amp_data(true_direction, origin_freq_list, sign='plus', check_spectrogram=False):
     """
 
     :param true_direction:
@@ -34,7 +34,7 @@ def create_amp_data(self, true_direction, origin_freq_list, sign='plus', check_s
             wave_data = file_path + data_path + '_' + str(true_direction) + '.wav'
         else:
             wave_data = file_path + data_path + '_m' + str(true_direction) + '.wav'
-        sound_data, w_channel, w_sampling_rate, w_frames_num = self.wave_read_func(wave_data)
+        sound_data, w_channel, w_sampling_rate, w_frames_num = bm.wave_read_func(wave_data)
         print(sound_data.shape)
         plt.specgram(sound_data[0, :], Fs=w_sampling_rate)
         plt.title('origin' + data_path + '_' + str(true_direction) + '.wav')

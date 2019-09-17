@@ -2,7 +2,7 @@
 from matplotlib import pyplot as plt
 import numpy as np
 import math
-from datetime import datetime
+# from datetime import datetime
 import os
 
 
@@ -248,49 +248,129 @@ def hight_e(single=None):
 def my_makedirs(path):
     if not os.path.isdir(path):
         os.makedirs(path)
+        
 
+def test_model(psi_deg=15, theta_deg=50, phi_deg=135):
+    # パラメータ
+    gamma_sm = 0.9
+    gamma_dm = 0.1
+    gamma_sh = 0.1
+    gamma_dh = 0.9
+    # l_1 = 10  # ホントはいらない
+    # l_2 = 20  # ホントはいらない
+    # beta_s_deg = 0    # ホントはいらない(theta_deg = 90のこと)
+    rho = 0.5
+    alpha = 2
+    
+    # 必要な数値の計算(このあと11行はいらない。※座標の計算は必要ない。)
+    # tan_beta = math.tan(math.radians(beta_s_deg))
+    # x = (l_2 * tan_beta - l_1/2) / (1 + tan_beta * math.tan(math.radians(psi_deg)))
+    # y = -1 * math.tan(math.radians(psi_deg)) * x + l_2
+    # print('x, y:', x, y)
+    # if x ** 2 + (y - l_2) ** 2 > l_2 ** 2:
+    #     print("ERROR Q is not exit.")
+    #     return 0
+    # s_q_cal = np.array([x + l_1 / 2, y])
+    # q_m_cal = np.array([l_1 / 2 - x, - y])
+    # o = np.array([1, 0])
+    # phi_deg_cal = math.degrees(math.acos(((- 1 * q_m_cal) @ o) / (np.sqrt(q_m_cal[0] ** 2 + q_m_cal[1] ** 2))))
+    
+    # ベクトルのみで同様に計算。
+    s_q = np.array([math.cos(math.radians(theta_deg)), math.sin(math.radians(theta_deg))])
+    q_m = -1 * np.array([math.cos(math.radians(phi_deg)), math.sin(math.radians(phi_deg))])
+    psi_rad = math.radians(psi_deg)
+    n = np.array([- 1 * math.sin(psi_rad), -1 * math.cos(psi_rad)])
+    r = s_q + 2 * ((-1 * s_q) @ n) * n
 
+    # print("s_q", s_q, s_q_cal)
+    # print("n", n)
+    # print("r", r)
+    # print("q_m", q_m, q_m_cal)
+    # print("phi_deg_cal", phi_deg_cal)
+    
+    # 答えの計算
+    specular = (r @ q_m) / (np.sqrt(r[0] ** 2 + r[1] ** 2) * np.sqrt(q_m[0] ** 2 + q_m[1] ** 2))
+    diffuse = ((-1 * s_q) @ n) / (np.sqrt(n[0] ** 2 + n[1] ** 2) * np.sqrt(s_q[0] ** 2 + s_q[1] ** 2))
+    middle = gamma_sm * specular ** alpha + gamma_dm * rho * diffuse
+    high = gamma_sh * specular ** alpha + gamma_dh * rho * diffuse
+    
+    # print("specular", specular, specular**alpha)
+    # print("diffuse", diffuse, rho * diffuse, math.degrees(math.acos(diffuse)))
+    # print("middle", middle)
+    # print("high", high)
+    # print("$beta_r$", math.degrees(math.acos(specular)))
+    # print("$beta_q$", math.degrees(math.acos(diffuse)))
+    # print("**********************************************")
+    # print("Difference", middle/high)
+    # print("**********************************************")
+    
+    return middle/high
+    
+    
 if __name__ == '__main__':
-    # middle_e(0.5)
-    sigma = 0
-    for i in range(90):
-        sigma += math.cos(math.radians(i))
-    alpha = 1 / sigma
+    # # middle_e(0.5)
+    # sigma = 0
+    # for i in range(90):
+    #     sigma += math.cos(math.radians(i))
+    # alpha = 1 / sigma
+    #
+    # e_0 = alpha * math.cos((math.radians(90)))  # 直接音も入れておく。
+    # # e_l = low_e(e_0)
+    # e_m = middle_e(0.5)
+    # e_h = hight_e()
+    #
+    # freq = np.arange(100, 2000)
+    # e = math.e
+    # # gamma_l = 1 - 1 / (1 + e ** (-1 * (freq/15 - 35/3)))
+    # gamma_h = 0.8 * 1 / (1 + e ** (-1 * (freq / 150 - 25 / 3)))
+    # gamma_m = 1 - gamma_h
+    #
+    # psi = np.arange(-40, 41, 10)
+    # model_array = np.zeros((9, len(freq)), dtype=float)
+    # plt.figure(figsize=(5, 7))
+    # for i, name in enumerate(psi):
+    #     print('++++++++++++++++++++++++++++++++++')
+    #     print('【' + str(name) + '】')
+    #     # print(e_l[i])
+    #     print(e_m[i])
+    #     print(e_h[i])
+    #     E = (gamma_m * e_m[i] + gamma_h * e_h[i])
+    #     model_array[i, :] = E
+    #     np.zeros((9, len(freq)), dtype=float)
+    #     plt.plot(freq, E, label=str(name))
+    # # plt.title('model difference about $\psi$')
+    # # plt.ylim(0.38, 0.68)
+    # plt.xlim(100, 2000)
+    # plt.xlabel('freq[Hz]')
+    # plt.ylabel('amp')
+    # plt.legend()
+    # plt.show()
+    #
+    # array_path = '../_array/19' + datetime.today().strftime("%m%d")
+    # my_makedirs(array_path)
+    # file_name = '/' + datetime.today().strftime("%H%M%S")
+    # np.save(array_path + file_name + '_model_array', model_array)
+    # print('Saved')
     
-    e_0 = alpha * math.cos((math.radians(90)))  # 直接音も入れておく。
-    # e_l = low_e(e_0)
-    e_m = middle_e(0.5)
-    e_h = hight_e()
-    
-    freq = np.arange(100, 2000)
-    e = math.e
-    # gamma_l = 1 - 1 / (1 + e ** (-1 * (freq/15 - 35/3)))
-    gamma_h = 0.8 * 1 / (1 + e ** (-1 * (freq / 150 - 25 / 3)))
-    gamma_m = 1 - gamma_h
-    
-    psi = np.arange(-40, 41, 10)
-    model_array = np.zeros((9, len(freq)), dtype=float)
-    plt.figure(figsize=(5, 7))
-    for i, name in enumerate(psi):
-        print('++++++++++++++++++++++++++++++++++')
-        print('【' + str(name) + '】')
-        # print(e_l[i])
-        print(e_m[i])
-        print(e_h[i])
-        E = (gamma_m * e_m[i] + gamma_h * e_h[i])
-        model_array[i, :] = E
-        np.zeros((9, len(freq)), dtype=float)
-        plt.plot(freq, E, label=str(name))
-    # plt.title('model difference about $\psi$')
-    # plt.ylim(0.38, 0.68)
-    plt.xlim(100, 2000)
-    plt.xlabel('freq[Hz]')
-    plt.ylabel('amp')
-    plt.legend()
+    test_psi_deg_list = np.arange(-90, 90, 1)
+    test_theta_deg_list = np.arange(0, 180, 1)
+    test_phi_deg_list = np.arange(0, 180, 1)
+    D_list = []
+    for i in test_psi_deg_list:
+        D_list.append(test_model(psi_deg=i))
+    plt.plot(test_psi_deg_list, D_list)
+    plt.title("$psi$")
+    plt.ylim(-5, 5)
     plt.show()
-    
-    array_path = '../_array/19' + datetime.today().strftime("%m%d")
-    my_makedirs(array_path)
-    file_name = '/' + datetime.today().strftime("%H%M%S")
-    np.save(array_path + file_name + '_model_array', model_array)
-    print('Saved')
+    # F_list = []
+    # for i in test_theta_deg_list:
+    #     F_list.append(test_model(theta_deg=i))
+    # plt.plot(test_theta_deg_list, F_list)
+    # plt.title("$theta$")
+    # plt.show()
+    # E_list = []
+    # for i in test_phi_deg_list:
+    #     E_list.append(test_model(phi_deg=i))
+    # plt.plot(test_phi_deg_list, E_list)
+    # plt.title("$phi$")
+    # plt.show()

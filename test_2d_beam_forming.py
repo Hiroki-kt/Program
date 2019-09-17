@@ -2,11 +2,12 @@ import numpy as np
 import math
 
 
-class Transfer_Function_2d():
+class TransferFunction2d:
     def __init__(self):
         pass
     
-    def mic_positions(self, mic_r, mic_num):
+    @staticmethod
+    def mic_positions(mic_r, mic_num):
         # return mic positions of mic array
         mic_pos_list = []
         for mic_id in range(mic_num):
@@ -15,7 +16,8 @@ class Transfer_Function_2d():
         print('#Create circular microphone array position')
         return mic_pos_list
 
-    def ss_positions(self, radius, min_theta, max_theta, theta_interval):
+    @staticmethod
+    def ss_positions(radius, min_theta, max_theta, theta_interval):
         # return sound source theta list , and sound source position class list
         theta_list = np.arange(min_theta, max_theta + theta_interval, theta_interval)
         ss_pos_list = []
