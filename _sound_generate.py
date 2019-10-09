@@ -21,9 +21,9 @@ def single_tone(length, interval_length, fs, freq_list):
     
     t = np.linspace(0, length, samples + 1)
     t_rest = np.linspace(0, interval_length, samples_rest + 1)
-    s = 32767 * np.sin(2 * np.pi * 800 * t)
+    s = 32767 * np.sin(2 * np.pi * 800 * t)  # テスト音
     for i, name in enumerate(freq_list):
-        s_1 = 32767 * np.sin(2 * np.pi * name * t)
+        s_1 = 0.7 * 32767 * np.sin(2 * np.pi * name * t)
         rest = np.zeros((len(t_rest),))
         s = np.append(s, rest)
         s = np.append(s, s_1)
@@ -66,14 +66,14 @@ if __name__ == '__main__':
     CHANNELS = 1  # チャンネル数
     WIDTH = 2  # 量子化精度：2byte=16bit=65,536段階=±32,767
     SAMPLING_RATE = 44100  # サンプリング周波数
-    AMPLITUDE = 0.8   # 振幅
+    AMPLITUDE = 0.8  # 振幅
 
-    f_list = (500, 2000)  # 欲しい音の高さ
-    time = 1.0  # 録音時間
-    time_rest = 3  # 単音を連続で流す場合のインターバル
+    f_list = (500, 1000, 5000)  # 欲しい音の高さ
+    time = 0.0  # 録音時間
+    time_rest = 1  # 単音を連続で流す場合のインターバル
 
-    # data = single_tone(time, time_rest, SAMPLING_RATE, f_list)
-    data = create_chord(AMPLITUDE, f_list, SAMPLING_RATE, time)
+    data = single_tone(time, time_rest, SAMPLING_RATE, f_list)
+    # data = create_chord(AMPLITUDE, f_list, SAMPLING_RATE, time)
     
     wf = wave.open(FRAME, 'w')
     wf.setnchannels(CHANNELS)

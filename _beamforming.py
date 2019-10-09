@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import scipy.signal
 import numpy as np
 
-from simulation_envs import SimulationEnvs
+from _beamforming_sub import SimulationEnvs
 
 '''
 beamformer class by python 3
@@ -57,7 +57,7 @@ class BeamForming(SimulationEnvs):
             # sound_dir = float(config['sound']['sound_dir'])
             self.wave_data = config['sound']['wave_data']
             # self.sound_data_func(wave_data, sound_method, sound_r, sound_dir)
-            print('#Success parse config param')
+            # print('#Success parse config param')
             
             # self.freq_list = np.fft.rfftfreq(self.FFT_sample_num, d=1. / self.w_sampling_rate)
             # self.freq_min_id, self.freq_max_id = self.freq_id()
@@ -154,7 +154,7 @@ class BeamForming(SimulationEnvs):
             dis_diff_repeat_array = np.ones((freq_num, w_channel)) * dis_diff.reshape((-1, w_channel))
             tf[k, :, :] = np.exp(freq_repeat_array * dis_diff_repeat_array)
             # beam_conf[k,:,:] = tf[k,:,:]/ ()
-        print('#Create transfer funtion', tf.shape)
+        # print('#Create transfer funtion', tf.shape)
         tf = tf.conj()  # 360*257*8
         if combine_num == 1:
             return tf

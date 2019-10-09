@@ -2,7 +2,7 @@
 import os
 from datetime import datetime
 import numpy as np
-from beamforming import BeamForming
+from _beamforming import BeamForming
 
 
 def my_makedirs(path):

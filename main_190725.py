@@ -1,7 +1,7 @@
 import os
 import numpy as np
 from scipy import signal
-from beamforming import BeamForming
+from _beamforming import BeamForming
 # from simulation_envs import Id
 from matplotlib import pyplot as plt
 
@@ -58,7 +58,7 @@ def down_sampling(conversion_rate, data, fs):
 
 if __name__ == '__main__':
     '''パラメータ初期値'''
-    bm = BeamForming("./config_0722.ini")
+    bm = BeamForming("./190722_config.ini")
     file_path = "../_exp/190714/recode_data/0_2"
     wave_path = file_path + ".wav"
     print("*****************************************")

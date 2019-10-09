@@ -1,6 +1,6 @@
 import numpy as np
 from matplotlib import pyplot as plt
-from beamforming import BeamForming
+from _beamforming import BeamForming
 from shape_from_sound import ShapeFromSound
 
 

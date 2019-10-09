@@ -1,7 +1,7 @@
 # coding:utf-8
 import numpy as np
 import math
-from beamforming import BeamForming
+from _beamforming import BeamForming
 from shape_from_sound import ShapeFromSound
 
 

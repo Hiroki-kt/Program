@@ -16,10 +16,10 @@ class SimulationEnvs(object):
         # return mic positions of mic array
         mic_pos_list = []
         for mic_id in range(mic_num):
-            theta = mic_id / mic_num * 360 + 90
+            theta = mic_id / mic_num * 360 + 45
             mic_pos_list.append(Position(mic_r, theta))
-        print('#Create circular microphone array position')
-        # print(mic_pos_list[0].y, mic_pos_list[1].x, mic_pos_list[2].y, mic_pos_list[3].x)
+        # print('#Create circular microphone array position')
+        # print(mic_pos_list[0].x, mic_pos_list[1].x, mic_pos_list[2].x, mic_pos_list[3].x)
         return mic_pos_list
     
     @staticmethod
@@ -29,8 +29,8 @@ class SimulationEnvs(object):
         ss_pos_list = []
         for theta in theta_list:
             ss_pos_list.append(Position(radius, theta))
-        print('#Create temporal sound source position list')
-        print("theta 0 's direction is", ss_pos_list[0].pos())
+        # print('#Create temporal sound source position list')
+        # print("theta 0 's direction is", ss_pos_list[0].pos())
         return theta_list, ss_pos_list
     
     @staticmethod
