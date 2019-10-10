@@ -1,7 +1,7 @@
 import numpy as np
 from matplotlib import pyplot as plt
 from _beamforming import BeamForming
-from shape_from_sound import ShapeFromSound
+from test_shape_from_sound import ShapeFromSound
 
 
 def create_amp_data(true_direction, origin_freq_list, sign='plus', check_spectrogram=False):

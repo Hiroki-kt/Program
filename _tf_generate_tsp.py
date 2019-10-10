@@ -96,7 +96,7 @@ class TSP(MyFunc):
 
         
 if __name__ == '__main__':
-    CONFIG_PATH = "./config_1003.ini"
+    CONFIG_PATH = "./config_tf.ini"
     tsp = TSP(CONFIG_PATH)
     DIRECTIONS = list(range(-50, 50))
     error_num = 0

@@ -65,7 +65,7 @@ def cut_data(num, bm):
 
 
 if __name__ == '__main__':
-    beam = BeamForming("./190722_config.ini")
+    beam = BeamForming("./config_rsj2019.ini")
     DELECTION_LIST = list(range(-50, 50))
     exp_data, rms_data, bpf_rms_data, bm_data = cut_data(DELECTION_LIST[0], beam)
     for i in DELECTION_LIST[1:]:

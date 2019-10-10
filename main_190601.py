@@ -2,7 +2,7 @@
 import numpy as np
 import math
 from _beamforming import BeamForming
-from shape_from_sound import ShapeFromSound
+from test_shape_from_sound import ShapeFromSound
 
 
 def main(true_direction, sign='plus'):

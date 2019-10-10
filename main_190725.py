@@ -58,7 +58,7 @@ def down_sampling(conversion_rate, data, fs):
 
 if __name__ == '__main__':
     '''パラメータ初期値'''
-    bm = BeamForming("./190722_config.ini")
+    bm = BeamForming("./config_rsj2019.ini")
     file_path = "../_exp/190714/recode_data/0_2"
     wave_path = file_path + ".wav"
     print("*****************************************")
