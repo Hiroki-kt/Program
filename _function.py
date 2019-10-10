@@ -4,6 +4,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 import math
 import wave
+import sys
+from scipy import signal
 
 
 class MyFunc:
@@ -113,3 +115,25 @@ class MyFunc:
         wf.writeframes(b''.join(data))
         wf.close()
         print('saved', wave_file)
+        
+    def zero_cross(self, data, step, sampling, size, up=False):
+        start = count = 0
+        zero_cross = []
+        time_list = []
+        while count < sampling/step:
+            sign = np.diff(np.sign(data[:, start: start + size]))
+            zero_cross.append(np.where(sign)[1].shape[0])
+            time_list.append(start)
+            start = start + step
+            count += 1
+        # self.data_plot(range(count), zero_cross)
+        # plt.show()
+        if up:
+            peak = signal.argrelmin(np.array(zero_cross), order=10)
+            time_id = peak[0][np.argmin(np.array(zero_cross)[peak])]
+        else:
+            peak = signal.argrelmax(np.array(zero_cross), order=10)
+            time_id = peak[0][np.argmax(np.array(zero_cross)[peak])]
+        START_TIME = time_list[int(time_id)]
+        # print(START_TIME)
+        return START_TIME
