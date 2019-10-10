@@ -38,7 +38,7 @@ class TSP(MyFunc):
             print(self.TSP.shape, self.ITSP.shape)
             self.FIG_PATH = '../_img/19' + datetime.today().strftime("%m%d") + '/' + \
                         datetime.today().strftime("%H%M%S") + "/"
-            # self.my_makedirs(self.FIG_PATH)
+            self.my_makedirs(self.FIG_PATH)
                 
         else:
             print("#couldn't find", config_path)
@@ -52,6 +52,7 @@ class TSP(MyFunc):
         origin_sound = np.delete(origin_sound, [0, 5], 0)
         # Zero Cross
         START_TIME = self.zero_cross(origin_sound, self.CROSS0_STEP, sampling, self.CROSS0_SIZE)
+        # print(START_TIME)
         if START_TIME != 0:
             # img_file = self.FIG_PATH + str(num) + '.png'
             use_sound = origin_sound[:, START_TIME: int(START_TIME + self.TSP_FRAMES * self.NEED_NUM)]
@@ -62,13 +63,14 @@ class TSP(MyFunc):
         else:
             return -1
 
-    def generate_tf(self, tsp_res, plot=False):
+    def generate_tf(self, tsp_res):
         tsp_res = np.average(tsp_res, axis=0)
         # plt.specgram(tsp_res, Fs=44100)
         # plt.show()
         # 今回は同じ大きさになるはずだが、一応itsp信号と同じ大きさなのか確認
         N = self.ITSP.shape[0]
         residual = tsp_res.shape[0] - N
+        # print(N, tsp_res.shape[0])
         if residual >= N:
             tsp_res[:N] = tsp_res[:N] + tsp_res[N:2 * N]
         else:
@@ -83,15 +85,6 @@ class TSP(MyFunc):
         # ir = stats.zscore(ir)
         # ir = ir / np.max(ir)
         # ir = (ir - np.min(ir))/ (np.max(ir) - np.min(ir))
-        if plot:
-            time_list = [k / 44100 for k in range(N)]
-            plt.plot(time_list, ir)
-            plt.show()
-            plt.specgram(ir, Fs=44100, cmap='jet')
-            plt.ylim(0, 8000)
-            plt.clim(-100, 0)
-            plt.colorbar()
-            plt.show()
         return ir, fft_ir
 
         
@@ -102,6 +95,7 @@ if __name__ == '__main__':
     error_num = 0
     mic = 0
     max_array = np.zeros((tsp.MIC_NUM, 100))
+    plot = True
     # data = tsp.cut_tsp_data(22)
     # tf, fft_tf = tsp.generate_tf(data[mic, :, :])
     max_list = []
@@ -111,11 +105,27 @@ if __name__ == '__main__':
         for mic in range(tsp.MIC_NUM):
             tf, fft_tf = tsp.generate_tf(data[mic, :, :])
             max_array[mic, i] = np.max(tf)
+            if plot:
+                # img_file1 = tsp.FIG_PATH + '/plot/' + str(mic) + '/'
+                # tsp.my_makedirs(img_file1)
+                img_file2 = tsp.FIG_PATH + '/spec/' + str(mic) + '/'
+                tsp.my_makedirs(img_file2)
+                # time_list = [k / 44100 for k in range(tf.shape[0])]
+                plt.figure()
+                # plt.plot(time_list, tf)
+                # plt.savefig(img_file1 + str(deg) + '.png')
+                plt.specgram(tf, Fs=44100, cmap='jet')
+                plt.ylim(0, 8000)
+                plt.clim(100, 150)
+                plt.colorbar()
+                plt.savefig(img_file2 + str(deg) + '.png')
 
-    for i in range(tsp.MIC_NUM):
-        title = "Impulse Response Mic " + str(i+1)
-        X_Label = "Azimuth [deg]"
-        Y_Label = "2k-1k ?? [Hz], Max num"
-        tsp.data_plot(DIRECTIONS, max_array[i, :], title=title, xlabel=X_Label, ylabel=Y_Label)
-        plt.ylim(10**11, 2.0*10**11)
-        plt.show()
+    # img_file3 = tsp.FIG_PATH + '/all_plot/'
+    # tsp.my_makedirs(img_file3)
+    # for i in range(tsp.MIC_NUM):
+    #     title = "Impulse Response Mic " + str(i+1)
+    #     X_Label = "Azimuth [deg]"
+    #     Y_Label = "Max num"
+    #     tsp.data_plot(DIRECTIONS, max_array[i, :], title=title, xlabel=X_Label, ylabel=Y_Label)
+    #     # plt.ylim(10**11, 2.0*10**11)
+    #     plt.savefig(img_file3 + str(i) + '.png')

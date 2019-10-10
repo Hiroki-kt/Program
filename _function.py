@@ -95,6 +95,7 @@ class MyFunc:
 
     @staticmethod
     def data_plot(x, data, title='test', xlabel='test', ylabel='test'):
+        plt.figure()
         plt.plot(x, data)
         plt.title(title)
         plt.xlabel(xlabel)
