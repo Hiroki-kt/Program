@@ -250,12 +250,12 @@ def my_makedirs(path):
         os.makedirs(path)
         
 
-def test_model(psi_deg=15, theta_deg=50, phi_deg=135):
+def test_model(psi_deg=15, theta_deg=90, phi_deg=90):
     # パラメータ
     gamma_sm = 0.9
     gamma_dm = 0.1
-    gamma_sh = 0.1
-    gamma_dh = 0.9
+    gamma_sh = 0.2
+    gamma_dh = 0.8
     # l_1 = 10  # ホントはいらない
     # l_2 = 20  # ホントはいらない
     # beta_s_deg = 0    # ホントはいらない(theta_deg = 90のこと)
@@ -291,8 +291,8 @@ def test_model(psi_deg=15, theta_deg=50, phi_deg=135):
     # 答えの計算
     specular = (r @ q_m) / (np.sqrt(r[0] ** 2 + r[1] ** 2) * np.sqrt(q_m[0] ** 2 + q_m[1] ** 2))
     diffuse = ((-1 * s_q) @ n) / (np.sqrt(n[0] ** 2 + n[1] ** 2) * np.sqrt(s_q[0] ** 2 + s_q[1] ** 2))
-    middle = gamma_sm * specular ** alpha + gamma_dm * rho * diffuse
-    high = gamma_sh * specular ** alpha + gamma_dh * rho * diffuse
+    middle = gamma_sm * specular ** alpha + gamma_dm * diffuse * rho
+    high = gamma_sh * specular ** alpha + gamma_dh * diffuse * rho
     
     # print("specular", specular, specular**alpha)
     # print("diffuse", diffuse, rho * diffuse, math.degrees(math.acos(diffuse)))
@@ -304,9 +304,25 @@ def test_model(psi_deg=15, theta_deg=50, phi_deg=135):
     # print("Difference", middle/high)
     # print("**********************************************")
     
-    return middle/high
+    return middle/high, middle, high
     
+
+def test_model_freq(gamma_d, gamma_s, psi_deg=10, theta_deg=90, phi_deg=90):
+    rho = 0.5
+    alpha = 2
+    s_q = np.array([math.cos(math.radians(theta_deg)), math.sin(math.radians(theta_deg))])
+    q_m = -1 * np.array([math.cos(math.radians(phi_deg)), math.sin(math.radians(phi_deg))])
+    psi_rad = math.radians(psi_deg)
+    n = np.array([- 1 * math.sin(psi_rad), -1 * math.cos(psi_rad)])
+    r = s_q + 2 * ((-1 * s_q) @ n) * n
+    specular = (r @ q_m) / (np.sqrt(r[0] ** 2 + r[1] ** 2) * np.sqrt(q_m[0] ** 2 + q_m[1] ** 2))
+    diffuse = ((-1 * s_q) @ n) / (np.sqrt(n[0] ** 2 + n[1] ** 2) * np.sqrt(s_q[0] ** 2 + s_q[1] ** 2))
+
+    E = gamma_s * specular ** alpha + gamma_d * diffuse * rho
     
+    return E
+
+
 if __name__ == '__main__':
     # # middle_e(0.5)
     # sigma = 0
@@ -352,16 +368,82 @@ if __name__ == '__main__':
     # np.save(array_path + file_name + '_model_array', model_array)
     # print('Saved')
     
-    test_psi_deg_list = np.arange(-90, 90, 1)
+    test_psi_deg_list = np.arange(-50, 50, 1)
     test_theta_deg_list = np.arange(0, 180, 1)
     test_phi_deg_list = np.arange(0, 180, 1)
-    D_list = []
+    freq_list = np.arange(500, 2000, 10)
+    e = math.e
+    # gamma_l = 1 - 1 / (1 + e ** (-1 * (freq/15 - 35/3)))
+    gamma_d = [0.8 * 1 / (1 + e ** (-1 * (freq / 150 - 25 / 3))) for freq in freq_list]
+    gamma_s = [1 - k for k in gamma_d]
+    # plt.figure()
+    # plt.plot(freq_list, gamma_s, label="s")
+    # plt.plot(freq_list, gamma_d, label="d")
+    # plt.legend()
+    # plt.show()
+    
+    D_s90list = []
+    D_s45list = []
+    D_sm45list = []
+    m_list = []
+    h_list = []
     for i in test_psi_deg_list:
-        D_list.append(test_model(psi_deg=i))
-    plt.plot(test_psi_deg_list, D_list)
-    plt.title("$psi$")
-    plt.ylim(-5, 5)
+        d, middle, high = test_model(psi_deg=i)
+        D_s90list.append(d)
+        m_list.append(middle)
+        h_list.append(high)
+        d2, middle2, high2 = test_model(psi_deg=i, theta_deg=45)
+        D_s45list.append(d2)
+        # d3, middle3, high3 = test_model(psi_deg=i, theta_deg=135)
+        # D_sm45list.append(d3)
+    plt.figure()
+    plt.plot(test_psi_deg_list, D_s45list, label='S = 45')
+    plt.plot(test_psi_deg_list, D_s90list, label='S = 90')
+    # plt.plot(test_psi_deg_list, D_sm45list, label='S = 135')
+    # plt.title("$psi$")
+    plt.ylim(0, 3)
+    plt.xlabel("Azimuth [deg]", fontsize=15)
+    plt.ylabel("$D(N|f_m, f_h)$", fontsize=15)
+    plt.legend(fontsize=15)
+    plt.tick_params(labelsize=15)
     plt.show()
+    
+    plt.figure()
+    plt.plot(test_psi_deg_list, m_list, label="$f$=1000")
+    plt.plot(test_psi_deg_list, h_list, label="$f$=2000")
+    # plt.title("$psi$")
+    # plt.ylim(-3, 3)
+    plt.xlabel("Azimuth [deg]", fontsize=15)
+    plt.ylabel("$E(N)$", fontsize=15)
+    plt.tick_params(labelsize=15)
+    plt.legend(fontsize=15)
+    # plt.show()
+    
+    # plt.figure()
+    # plt.plot(test_psi_deg_list, h_list, label="$f$=2000")
+    # # plt.title("$psi$")
+    # # plt.ylim(-3, 3)
+    # plt.xlabel("Azimuth [deg]", fontsize=15)
+    # plt.ylabel("$E(N)$", fontsize=15)
+    # plt.tick_params(labelsize=15)
+    # plt.show()
+    
+    e_10list = []
+    e_m10list = []
+    for j in range(len(freq_list)):
+        e_10list.append(test_model_freq(gamma_d[j], gamma_s[j], psi_deg=0))
+        e_m10list.append(test_model_freq(gamma_d[j], gamma_s[j], psi_deg=20))
+    
+    plt.figure()
+    plt.plot(freq_list, e_10list, label="$\psi$=0")
+    plt.plot(freq_list, e_m10list, label="$\psi$=20")
+    # plt.title("$psi$")
+    # plt.ylim(-3, 3)
+    plt.xlabel("Frequency [Hz]", fontsize=15)
+    plt.ylabel("$E(N)$", fontsize=15)
+    plt.tick_params(labelsize=15)
+    plt.legend(fontsize=15)
+    # plt.show()
     # F_list = []
     # for i in test_theta_deg_list:
     #     F_list.append(test_model(theta_deg=i))

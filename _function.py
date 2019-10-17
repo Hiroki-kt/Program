@@ -117,7 +117,8 @@ class MyFunc:
         wf.close()
         print('saved', wave_file)
         
-    def zero_cross(self, data, step, sampling, size, up=False):
+    @staticmethod
+    def zero_cross(data, step, sampling, size, up=False):
         start = count = 0
         zero_cross = []
         time_list = []
@@ -127,8 +128,6 @@ class MyFunc:
             time_list.append(start)
             start = start + step
             count += 1
-        # self.data_plot(range(count), zero_cross)
-        # plt.show()
         if up:
             peak = signal.argrelmin(np.array(zero_cross), order=10)
             time_id = peak[0][np.argmin(np.array(zero_cross)[peak])]
@@ -138,3 +137,8 @@ class MyFunc:
         START_TIME = time_list[int(time_id)]
         # print(START_TIME)
         return START_TIME
+    
+    @staticmethod
+    def freq_ids(freq_list, freq):
+        freq_id = np.abs(freq_list - freq).argmin()
+        return freq_id

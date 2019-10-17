@@ -6,7 +6,7 @@ import sys
 from _function import MyFunc
 from matplotlib import pyplot as plt
 from datetime import datetime
-
+import time
 
 class TSP(MyFunc):
     def __init__(self, config_path):
@@ -38,7 +38,7 @@ class TSP(MyFunc):
             print(self.TSP.shape, self.ITSP.shape)
             self.FIG_PATH = '../_img/19' + datetime.today().strftime("%m%d") + '/' + \
                         datetime.today().strftime("%H%M%S") + "/"
-            self.my_makedirs(self.FIG_PATH)
+            # self.my_makedirs(self.FIG_PATH)
                 
         else:
             print("#couldn't find", config_path)
@@ -54,10 +54,7 @@ class TSP(MyFunc):
         START_TIME = self.zero_cross(origin_sound, self.CROSS0_STEP, sampling, self.CROSS0_SIZE)
         # print(START_TIME)
         if START_TIME != 0:
-            # img_file = self.FIG_PATH + str(num) + '.png'
             use_sound = origin_sound[:, START_TIME: int(START_TIME + self.TSP_FRAMES * self.NEED_NUM)]
-            # plt.specgram(use_sound[0], Fs=44100)
-            # plt.savefig(img_file)
             use_sound = np.reshape(use_sound, (self.MIC_NUM, self.NEED_NUM, -1))
             return use_sound
         else:
@@ -65,12 +62,9 @@ class TSP(MyFunc):
 
     def generate_tf(self, tsp_res):
         tsp_res = np.average(tsp_res, axis=0)
-        # plt.specgram(tsp_res, Fs=44100)
-        # plt.show()
         # 今回は同じ大きさになるはずだが、一応itsp信号と同じ大きさなのか確認
         N = self.ITSP.shape[0]
         residual = tsp_res.shape[0] - N
-        # print(N, tsp_res.shape[0])
         if residual >= N:
             tsp_res[:N] = tsp_res[:N] + tsp_res[N:2 * N]
         else:
@@ -95,31 +89,63 @@ if __name__ == '__main__':
     error_num = 0
     mic = 0
     max_array = np.zeros((tsp.MIC_NUM, 100))
-    plot = True
+    dif_fft = np.zeros((tsp.MIC_NUM, 100, 512))
+    plot = False
     # data = tsp.cut_tsp_data(22)
     # tf, fft_tf = tsp.generate_tf(data[mic, :, :])
     max_list = []
+    f_h = 5000
+    f_m = 1000
+    freq_list = np.fft.rfftfreq(tsp.ITSP.shape[0], 1/44100)
+    fft_tf_array = np.zeros((100, tsp.MIC_NUM, len(freq_list)))
+    fh_id = tsp.freq_ids(freq_list, f_h)
+    fm_id = tsp.freq_ids(freq_list, f_m)
+    # print(freq_list[fh_id], freq_list[fd_id])
+    # time.sleep(30)
     for i, deg in enumerate(DIRECTIONS):
         print(deg)
         data = tsp.cut_tsp_data(deg)
         for mic in range(tsp.MIC_NUM):
             tf, fft_tf = tsp.generate_tf(data[mic, :, :])
-            max_array[mic, i] = np.max(tf)
+            # max_array[mic, i] = np.max(tf)
+            fft_tf_array[i, mic, :] = fft_tf
             if plot:
-                # img_file1 = tsp.FIG_PATH + '/plot/' + str(mic) + '/'
-                # tsp.my_makedirs(img_file1)
+                img_file1 = tsp.FIG_PATH + '/plot/' + str(mic) + '/'
+                tsp.my_makedirs(img_file1)
                 img_file2 = tsp.FIG_PATH + '/spec/' + str(mic) + '/'
                 tsp.my_makedirs(img_file2)
-                # time_list = [k / 44100 for k in range(tf.shape[0])]
+                time_list = [k / 44100 for k in range(tf.shape[0])]
                 plt.figure()
-                # plt.plot(time_list, tf)
-                # plt.savefig(img_file1 + str(deg) + '.png')
+                plt.plot(time_list, tf)
+                plt.savefig(img_file1 + str(deg) + '.png')
+                plt.figure()
                 plt.specgram(tf, Fs=44100, cmap='jet')
                 plt.ylim(0, 8000)
                 plt.clim(100, 150)
                 plt.colorbar()
                 plt.savefig(img_file2 + str(deg) + '.png')
+    
 
+    fm_data = fft_tf_array[:, :, fm_id]
+    fh_data = fft_tf_array[:, :, fh_id]
+    img_file3 = tsp.FIG_PATH + '/freq_plot/'
+    tsp.my_makedirs(img_file3)
+    for i in range(tsp.MIC_NUM):
+        title = "Impulse Response Mic " + str(i+1)
+        X_Label = "Azimuth [deg]"
+        Y_Label = "IR"
+        power_data = [x ** 2 for x in fm_data[:, i].tolist()]
+        power_data2 = [x ** 2 for x in fh_data[:, i].tolist()]
+        tsp.data_plot(DIRECTIONS, power_data, title=title, xlabel=X_Label, ylabel=Y_Label)
+        # plt.ylim(10**11, 2.0*10**11)
+        plt.savefig(img_file3 + '1_' + str(i) + '.png')
+        tsp.data_plot(DIRECTIONS, power_data2, title=title, xlabel=X_Label, ylabel=Y_Label)
+        # plt.ylim(10**11, 2.0*10**11)
+        plt.savefig(img_file3 + '2_' + str(i) + '.png')
+        tsp.data_plot(DIRECTIONS, np.array(power_data)/np.array(power_data2), title=title, xlabel=X_Label, ylabel=Y_Label)
+        # plt.ylim(10**11, 2.0*10**11)
+        plt.savefig(img_file3 + '3_' + str(i) + '.png')
+    
     # img_file3 = tsp.FIG_PATH + '/all_plot/'
     # tsp.my_makedirs(img_file3)
     # for i in range(tsp.MIC_NUM):
