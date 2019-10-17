@@ -7,6 +7,8 @@ from _function import MyFunc
 from matplotlib import pyplot as plt
 from datetime import datetime
 import time
+from scipy import signal
+
 
 class TSP(MyFunc):
     def __init__(self, config_path):
@@ -51,7 +53,7 @@ class TSP(MyFunc):
         origin_sound, channels, sampling, frames = self.wave_read_func(file)
         origin_sound = np.delete(origin_sound, [0, 5], 0)
         # Zero Cross
-        START_TIME = self.zero_cross(origin_sound, self.CROSS0_STEP, sampling, self.CROSS0_SIZE)
+        START_TIME = self.zero_cross(origin_sound, self.CROSS0_STEP, sampling, self.CROSS0_SIZE, up=True)
         # print(START_TIME)
         if START_TIME != 0:
             use_sound = origin_sound[:, START_TIME: int(START_TIME + self.TSP_FRAMES * self.NEED_NUM)]
@@ -62,15 +64,20 @@ class TSP(MyFunc):
 
     def generate_tf(self, tsp_res):
         tsp_res = np.average(tsp_res, axis=0)
+        # plt.figure()
+        # plt.specgram(tsp_res, Fs=44100)
+        # plt.show()
         # 今回は同じ大きさになるはずだが、一応itsp信号と同じ大きさなのか確認
         N = self.ITSP.shape[0]
         residual = tsp_res.shape[0] - N
+        print(residual)
         if residual >= N:
             tsp_res[:N] = tsp_res[:N] + tsp_res[N:2 * N]
         else:
             tsp_res[:residual] = tsp_res[:residual] + tsp_res[N:N + residual]
         # fft
-        fft_tsp_res = np.fft.rfft(tsp_res[:N])
+        # fft_tsp_res = np.fft.rfft(tsp_res[:N])
+        fft_tsp_res = np.fft.rfft(self.TSP)
         fft_itsp = np.fft.rfft(self.ITSP)
         # 畳み込み
         fft_ir = fft_tsp_res * fft_itsp
@@ -90,7 +97,7 @@ if __name__ == '__main__':
     mic = 0
     max_array = np.zeros((tsp.MIC_NUM, 100))
     dif_fft = np.zeros((tsp.MIC_NUM, 100, 512))
-    plot = False
+    plot = True
     # data = tsp.cut_tsp_data(22)
     # tf, fft_tf = tsp.generate_tf(data[mic, :, :])
     max_list = []
@@ -109,6 +116,10 @@ if __name__ == '__main__':
             tf, fft_tf = tsp.generate_tf(data[mic, :, :])
             # max_array[mic, i] = np.max(tf)
             fft_tf_array[i, mic, :] = fft_tf
+            # peak = signal.argrelmax(np.abs(fft_tf), order=20)
+            # plt.plot(peak[0], np.abs(fft_tf[peak]))
+            # plt.xlim(0, 5000)
+            # plt.show()
             if plot:
                 img_file1 = tsp.FIG_PATH + '/plot/' + str(mic) + '/'
                 tsp.my_makedirs(img_file1)
@@ -124,12 +135,26 @@ if __name__ == '__main__':
                 plt.clim(100, 150)
                 plt.colorbar()
                 plt.savefig(img_file2 + str(deg) + '.png')
-    
 
     fm_data = fft_tf_array[:, :, fm_id]
     fh_data = fft_tf_array[:, :, fh_id]
     img_file3 = tsp.FIG_PATH + '/freq_plot/'
     tsp.my_makedirs(img_file3)
+    mic_a = 1
+    avg = np.average(np.abs(fft_tf_array), axis=0)
+    avg2 = np.average(avg, axis=0)
+    a = np.abs(fft_tf_array[10, mic_a, :]) / avg[mic_a]
+    peak = signal.argrelmax(a, order=30)
+
+    plt.figure()
+    plt.plot(peak[0], a[peak])
+    plt.xlim(0, 5000)
+    plt.xlabel("Frequency [Hz]", fontsize=15)
+    plt.ylabel("E(f)", fontsize=15)
+    plt.tick_params(labelsize=15)
+    plt.show()
+
+    time.sleep(30)
     for i in range(tsp.MIC_NUM):
         title = "Impulse Response Mic " + str(i+1)
         X_Label = "Azimuth [deg]"

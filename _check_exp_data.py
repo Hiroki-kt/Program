@@ -24,13 +24,13 @@ from _function import MyFunc as mfunc
 
 
 def cut_data(num, bm):
-    file_path = "../_exp/190920/recode_data/Right_data/" + str(num)
+    file_path = "../_exp/191015/recode_data/torn_heimen/" + str(num)
     wave_path = file_path + ".wav"
     INTERVAL_TIME = 1
-    NEED_TIME = 0.5
-    START_TIME = 1.5
-    DESTINY_FREQUENCY_LIST = [500, 1000, 2000]
-    FREQ_SIZE = 1024 * 4
+    NEED_TIME = 0.05
+    START_TIME = 0
+    DESTINY_FREQUENCY_LIST = [1000, 2000, 5000]
+    FREQ_SIZE = 1024
     
     '''main'''
     sound_data, w_channel, w_sampling_rate, w_frames_num = bm.wave_read_func(wave_path)
@@ -83,20 +83,20 @@ if __name__ == '__main__':
     rms_data = [deg(100), MIC(4), Freq(3(500, 1000, 2000))]
     '''
     TITLE = "1000Hz, 2000Hz rate using data that no filter, only amp(RMS result) "
-    Y_LABEL = "$e_1000$/$e_2000$"
-    X_LABEL = "deg"
+    Y_LABEL = "$D(f_m=1000,f_h=2000$"
+    X_LABEL = "Azimuth [deg]"
     MIC = 1
     e_rms_rate = rms_data[:, MIC, 0]/rms_data[:, MIC, 2]
-    # mfunc.data_plot(deg_list, e_rms_rate, TITLE, X_LABEL, Y_LABEL)
-    # plt.show()
+    mfunc.data_plot(DELECTION_LIST, e_rms_rate, TITLE, X_LABEL, Y_LABEL)
+    plt.show()
     
     '''
     次はフィルタをかけて、
     '''
-    TITLE2 = "1000Hz, 2000Hz rate using data that BPF filter, only amp(RMS result) "
-    e_bpf_rms_rate = bpf_rms_data[:, MIC, 0]/bpf_rms_data[:, MIC, 2]
-    # mfunc.data_plot(deg_list, e_bpf_rms_rate, TITLE2, X_LABEL, Y_LABEL)
-    # plt.show()
+    # TITLE2 = "1000Hz, 2000Hz rate using data that BPF filter, only amp(RMS result) "
+    e_bpf_rms_rate = bpf_rms_data[:, MIC, 0]/bpf_rms_data[:, MIC, 1]
+    mfunc.data_plot(DELECTION_LIST, e_bpf_rms_rate, xlabel=X_LABEL, ylabel=Y_LABEL)
+    plt.show()
     
     '''
     ビームフォーマを用いて、到達音源方向を制限する

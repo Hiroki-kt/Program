@@ -97,9 +97,10 @@ class MyFunc:
     def data_plot(x, data, title='test', xlabel='test', ylabel='test'):
         plt.figure()
         plt.plot(x, data)
-        plt.title(title)
-        plt.xlabel(xlabel)
-        plt.ylabel(ylabel)
+        # plt.title(title)
+        plt.xlabel(xlabel, fontsize=15)
+        plt.ylabel(ylabel, fontsize=15)
+        plt.tick_params(labelsize=15)
 
     @staticmethod
     def nextpow2(n):
@@ -132,7 +133,7 @@ class MyFunc:
             peak = signal.argrelmin(np.array(zero_cross), order=10)
             time_id = peak[0][np.argmin(np.array(zero_cross)[peak])]
         else:
-            peak = signal.argrelmax(np.array(zero_cross), order=10)
+            peak = signal.argrelmax(np.array(zero_cross), order=8)
             time_id = peak[0][np.argmax(np.array(zero_cross)[peak])]
         START_TIME = time_list[int(time_id)]
         # print(START_TIME)
