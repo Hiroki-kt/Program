@@ -70,14 +70,13 @@ class TSP(MyFunc):
         # 今回は同じ大きさになるはずだが、一応itsp信号と同じ大きさなのか確認
         N = self.ITSP.shape[0]
         residual = tsp_res.shape[0] - N
-        print(residual)
         if residual >= N:
             tsp_res[:N] = tsp_res[:N] + tsp_res[N:2 * N]
         else:
             tsp_res[:residual] = tsp_res[:residual] + tsp_res[N:N + residual]
         # fft
-        # fft_tsp_res = np.fft.rfft(tsp_res[:N])
-        fft_tsp_res = np.fft.rfft(self.TSP)
+        fft_tsp_res = np.fft.rfft(tsp_res[:N])
+        # fft_tsp_res = np.fft.rfft(self.TSP)
         fft_itsp = np.fft.rfft(self.ITSP)
         # 畳み込み
         fft_ir = fft_tsp_res * fft_itsp
@@ -97,7 +96,7 @@ if __name__ == '__main__':
     mic = 0
     max_array = np.zeros((tsp.MIC_NUM, 100))
     dif_fft = np.zeros((tsp.MIC_NUM, 100, 512))
-    plot = True
+    plot = False
     # data = tsp.cut_tsp_data(22)
     # tf, fft_tf = tsp.generate_tf(data[mic, :, :])
     max_list = []
@@ -143,15 +142,20 @@ if __name__ == '__main__':
     mic_a = 1
     avg = np.average(np.abs(fft_tf_array), axis=0)
     avg2 = np.average(avg, axis=0)
-    a = np.abs(fft_tf_array[10, mic_a, :]) / avg[mic_a]
-    peak = signal.argrelmax(a, order=30)
+    a = np.abs(fft_tf_array[49, mic_a, :]) / avg[mic_a]
+    b = np.abs(fft_tf_array[69, mic_a, :]) / avg[mic_a]
+    peak = signal.argrelmax(a, order=10)
+    peakb = signal.argrelmax(b, order=10)
 
     plt.figure()
-    plt.plot(peak[0], a[peak])
-    plt.xlim(0, 5000)
+    plt.plot(peak[0], a[peak], label="$\psi$=0")
+    plt.plot(peakb[0], b[peakb], label="$\psi$=20")
+    plt.xlim(500, 2000)
+    plt.ylim(0, 3)
     plt.xlabel("Frequency [Hz]", fontsize=15)
     plt.ylabel("E(f)", fontsize=15)
     plt.tick_params(labelsize=15)
+    plt.legend(fontsize=15)
     plt.show()
 
     time.sleep(30)
