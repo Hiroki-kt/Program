@@ -8,6 +8,7 @@ from matplotlib import pyplot as plt
 from datetime import datetime
 import time
 from scipy import signal
+from scipy import stats
 
 
 class TSP(MyFunc):
@@ -91,7 +92,8 @@ class TSP(MyFunc):
 if __name__ == '__main__':
     CONFIG_PATH = "./config_tf.ini"
     tsp = TSP(CONFIG_PATH)
-    DIRECTIONS = list(range(-50, 50))
+    # DIRECTIONS = list(range(-50, 50))
+    DIRECTIONS = [-50, -20, 0, 20, 50]
     error_num = 0
     mic = 0
     max_array = np.zeros((tsp.MIC_NUM, 100))
@@ -115,10 +117,19 @@ if __name__ == '__main__':
             tf, fft_tf = tsp.generate_tf(data[mic, :, :])
             # max_array[mic, i] = np.max(tf)
             fft_tf_array[i, mic, :] = fft_tf
-            # peak = signal.argrelmax(np.abs(fft_tf), order=20)
-            # plt.plot(peak[0], np.abs(fft_tf[peak]))
-            # plt.xlim(0, 5000)
-            # plt.show()
+            a = np.average(np.abs(data[mic, :, :]), axis=0)
+            b = np.average(data[mic, :, :], axis=0)
+            fft_b = np.fft.rfft(b)
+            # print(a.shape, tsp.TSP.shape)
+            normalize = stats.zscore(a)
+            # 正規化
+            # ir = stats.zscore(ir)
+            # ir = ir / np.max(ir)
+            # ir = (ir - np.min(ir))/ (np.max(ir) - np.min(ir))
+            peak = signal.argrelmax(np.abs(normalize), order=20)
+            plt.plot(freq_list, fft_b)
+            plt.xlim(500, 2000)
+            plt.show()
             if plot:
                 img_file1 = tsp.FIG_PATH + '/plot/' + str(mic) + '/'
                 tsp.my_makedirs(img_file1)

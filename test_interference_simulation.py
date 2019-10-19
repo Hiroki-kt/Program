@@ -4,6 +4,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 import math
 
+
 def reflection_interference(wave_file, mic2wall_dis, sound_speed=340):
     func = MyFunc()
     data, channels, samlpling, frames = func.wave_read_func(wave_file)
@@ -35,9 +36,20 @@ def separation_reflection_sound(synthetic, direct):
     r_data = s_data - d_data
 
     time_list = np.arange(0, s_data.shape[1])/44100
-    
+
+    plt.figure()
+    plt.plot(time_list, s_data[0])
+    plt.xlim(0, 1.0)
+    plt.show()
+
+    plt.figure()
+    plt.plot(time_list, d_data[0])
+    plt.xlim(0, 1.0)
+    plt.show()
+
     plt.figure()
     plt.plot(time_list, r_data[0])
+    plt.xlim(0, 1.0)
     plt.show()
     
 if __name__ == '__main__':

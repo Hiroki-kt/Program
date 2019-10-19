@@ -133,7 +133,7 @@ class MyFunc:
             peak = signal.argrelmin(np.array(zero_cross), order=10)
             time_id = peak[0][np.argmin(np.array(zero_cross)[peak])]
         else:
-            peak = signal.argrelmax(np.array(zero_cross), order=8)
+            peak = signal.argrelmax(np.array(zero_cross), order=30)
             time_id = peak[0][np.argmax(np.array(zero_cross)[peak])]
         START_TIME = time_list[int(time_id)]
         # print(START_TIME)
