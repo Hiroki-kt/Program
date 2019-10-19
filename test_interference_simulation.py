@@ -49,7 +49,7 @@ if __name__ == '__main__':
     # reflection_interference(wave_file, mic_1)
     # reflection_interference(wave_file, mic_3)
     
-    s_file = '../_exp/191015/recode_data/up_tsp/0.wav'
-    d_file = '../_exp/191015/recode_data/only_speaker/10.wav'
+    s_file = '../../../../OneDrive/Research/Recode_Data/up_tsp/0.wav'
+    d_file = '../../../../OneDrive/Research/Recode_Data/only_speaker/10.wav'
     
     separation_reflection_sound(s_file, d_file)
