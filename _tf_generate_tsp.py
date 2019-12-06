@@ -9,10 +9,12 @@ from datetime import datetime
 import time
 from scipy import signal
 from scipy import stats
+from distutils.util import strtobool
 
 
 class TSP(MyFunc):
     def __init__(self, config_path):
+        super().__init__()
         if os.path.exists(config_path):
             config = configparser.ConfigParser()
             config.read(config_path)
@@ -23,13 +25,17 @@ class TSP(MyFunc):
             self.SOUND_SPEED = float(config['SoundParam']['Sound_Speed'])
             self.SOUND_PATH = config['SoundParam']['File_Path']
             self.UP_TSP = bool(config['SoundParam']['UP_TSP'])
+            DATE = int(config['SoundParam']['Date'])
+            SOUND_KIND = config['SoundParam']['Sound_Kind']
+            GEOMETRIC = config['SoundParam']['Geometric']
+            PLANE_WAVE = bool(strtobool(config['SoundParam']['Plane_Wave']))
             # Sound Reshape Parameter
             self.NEED_NUM = int(config['ReshapeSound']['Need_Num'])
-            self.TSP_PATH = config['ReshapeSound']['TSP_Origin_Path']
             self.CROSS0_SIZE = int(config['ReshapeSound']['0Cross_Size'])
             self.CROSS0_STEP = int(config['ReshapeSound']['0Cross_Step'])
             self.CROSS0_THRESHOLD = int(config['ReshapeSound']['0Cross_Threshold'])
             # uptspの場合は逆
+            self.TSP_PATH = self.speaker_sound_path + '2_up_tsp_1num.wav'
             if self.UP_TSP:
                 itsp, self.TSP_CHANNELS, self.TSP_SAMPLING, self.TSP_FRAMES = self.wave_read_func(self.TSP_PATH)
                 self.ITSP = itsp[0]
@@ -40,18 +46,25 @@ class TSP(MyFunc):
                 self.ITSP = self.TSP[::-1]
             print(self.TSP.shape, self.ITSP.shape)
             self.FIG_PATH = '../_img/19' + datetime.today().strftime("%m%d") + '/' + \
-                        datetime.today().strftime("%H%M%S") + "/"
+                            datetime.today().strftime("%H%M%S") + "/"
             # self.my_makedirs(self.FIG_PATH)
-                
+        
         else:
             print("#couldn't find", config_path)
             sys.exit()
     
-    def cut_tsp_data(self, num):
+    def cut_tsp_data(self, num=None, use_data=None, individual=False):
         # Initialization
-        file = self.SOUND_PATH + str(num) + '.wav'
-        # Main
-        origin_sound, channels, sampling, frames = self.wave_read_func(file)
+        if num is not None:
+            file = self.SOUND_PATH + str(num) + '.wav'
+            # Main
+            origin_sound, channels, sampling, frames = self.wave_read_func(file)
+        elif use_data is not None:
+            origin_sound = use_data
+            sampling = 44100
+        else:
+            print("Error")
+            return -1
         origin_sound = np.delete(origin_sound, [0, 5], 0)
         # Zero Cross
         START_TIME = self.zero_cross(origin_sound, self.CROSS0_STEP, sampling, self.CROSS0_SIZE, up=True)
@@ -59,12 +72,16 @@ class TSP(MyFunc):
         if START_TIME != 0:
             use_sound = origin_sound[:, START_TIME: int(START_TIME + self.TSP_FRAMES * self.NEED_NUM)]
             use_sound = np.reshape(use_sound, (self.MIC_NUM, self.NEED_NUM, -1))
-            return use_sound
+            # print(use_sound.shape)
+            if individual:
+                return use_sound
+            else:
+                tsp_res = np.average(use_sound, axis=1)
+                return tsp_res
         else:
             return -1
-
+    
     def generate_tf(self, tsp_res):
-        tsp_res = np.average(tsp_res, axis=0)
         # plt.figure()
         # plt.specgram(tsp_res, Fs=44100)
         # plt.show()
@@ -88,7 +105,7 @@ class TSP(MyFunc):
         # ir = (ir - np.min(ir))/ (np.max(ir) - np.min(ir))
         return ir, fft_ir
 
-        
+
 if __name__ == '__main__':
     CONFIG_PATH = "./config_tf.ini"
     tsp = TSP(CONFIG_PATH)
@@ -104,7 +121,7 @@ if __name__ == '__main__':
     max_list = []
     f_h = 5000
     f_m = 1000
-    freq_list = np.fft.rfftfreq(tsp.ITSP.shape[0], 1/44100)
+    freq_list = np.fft.rfftfreq(tsp.ITSP.shape[0], 1 / 44100)
     fft_tf_array = np.zeros((100, tsp.MIC_NUM, len(freq_list)))
     fh_id = tsp.freq_ids(freq_list, f_h)
     fm_id = tsp.freq_ids(freq_list, f_m)
@@ -112,7 +129,7 @@ if __name__ == '__main__':
     # time.sleep(30)
     for i, deg in enumerate(DIRECTIONS):
         print(deg)
-        data = tsp.cut_tsp_data(deg)
+        data = tsp.cut_tsp_data(num=deg)
         for mic in range(tsp.MIC_NUM):
             tf, fft_tf = tsp.generate_tf(data[mic, :, :])
             # max_array[mic, i] = np.max(tf)
@@ -145,7 +162,7 @@ if __name__ == '__main__':
                 plt.clim(100, 150)
                 plt.colorbar()
                 plt.savefig(img_file2 + str(deg) + '.png')
-
+    
     fm_data = fft_tf_array[:, :, fm_id]
     fh_data = fft_tf_array[:, :, fh_id]
     img_file3 = tsp.FIG_PATH + '/freq_plot/'
@@ -157,7 +174,7 @@ if __name__ == '__main__':
     b = np.abs(fft_tf_array[69, mic_a, :]) / avg[mic_a]
     peak = signal.argrelmax(a, order=10)
     peakb = signal.argrelmax(b, order=10)
-
+    
     plt.figure()
     plt.plot(peak[0], a[peak], label="$\psi$=0")
     plt.plot(peakb[0], b[peakb], label="$\psi$=20")
@@ -168,10 +185,10 @@ if __name__ == '__main__':
     plt.tick_params(labelsize=15)
     plt.legend(fontsize=15)
     plt.show()
-
+    
     time.sleep(30)
     for i in range(tsp.MIC_NUM):
-        title = "Impulse Response Mic " + str(i+1)
+        title = "Impulse Response Mic " + str(i + 1)
         X_Label = "Azimuth [deg]"
         Y_Label = "IR"
         power_data = [x ** 2 for x in fm_data[:, i].tolist()]
@@ -182,7 +199,8 @@ if __name__ == '__main__':
         tsp.data_plot(DIRECTIONS, power_data2, title=title, xlabel=X_Label, ylabel=Y_Label)
         # plt.ylim(10**11, 2.0*10**11)
         plt.savefig(img_file3 + '2_' + str(i) + '.png')
-        tsp.data_plot(DIRECTIONS, np.array(power_data)/np.array(power_data2), title=title, xlabel=X_Label, ylabel=Y_Label)
+        tsp.data_plot(DIRECTIONS, np.array(power_data) / np.array(power_data2), title=title, xlabel=X_Label,
+                      ylabel=Y_Label)
         # plt.ylim(10**11, 2.0*10**11)
         plt.savefig(img_file3 + '3_' + str(i) + '.png')
     

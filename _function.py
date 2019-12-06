@@ -4,11 +4,17 @@ import numpy as np
 from matplotlib import pyplot as plt
 import math
 import wave
-import sys
+# import sys
 from scipy import signal
+from datetime import datetime
 
 
 class MyFunc:
+    def __init__(self):
+        self.onedrive_path = '../../../../OneDrive/Research/'
+        self.recode_data_path = self.onedrive_path + 'Recode_Data/'
+        self.speaker_sound_path = self.onedrive_path + 'Speaker_Sound/'
+        
     @staticmethod
     def wave_read_func(wave_path):
         with wave.open(wave_path, 'r') as wave_file:
@@ -40,6 +46,11 @@ class MyFunc:
         if not os.path.isdir(path):
             os.makedirs(path)
     
+    @staticmethod
+    def make_dir_path():
+        path = '/19' + datetime.today().strftime("%m%d") + '/'
+        return path
+        
     @staticmethod
     def reshape_sound_data(data, rate, interval_time, need_time, start_time, des_freq_list, time_range=0.1,
                            not_reshape=False):
@@ -129,11 +140,14 @@ class MyFunc:
             time_list.append(start)
             start = start + step
             count += 1
+        # plt.figure()
+        # plt.plot(time_list, zero_cross)
+        # plt.show()
         if up:
             peak = signal.argrelmin(np.array(zero_cross), order=10)
             time_id = peak[0][np.argmin(np.array(zero_cross)[peak])]
         else:
-            peak = signal.argrelmax(np.array(zero_cross), order=30)
+            peak = signal.argrelmax(np.array(zero_cross), order=20)
             time_id = peak[0][np.argmax(np.array(zero_cross)[peak])]
         START_TIME = time_list[int(time_id)]
         # print(START_TIME)
@@ -143,3 +157,54 @@ class MyFunc:
     def freq_ids(freq_list, freq):
         freq_id = np.abs(freq_list - freq).argmin()
         return freq_id
+    
+    @staticmethod
+    def data_search(date, sound_kind, geometric, plane_wave=True, calibration=False):
+        if plane_wave:
+            speaker = 'P'
+        else:
+            speaker = 'S'
+        
+        dir_name = str(date) + '_' + speaker + sound_kind + geometric
+        
+        if calibration:
+            if plane_wave:
+                return 'D_' + dir_name + '/10.wav'
+            else:
+                return 'C_' + dir_name + '/10.wav'
+        else:
+            return dir_name + '/'
+        
+    @staticmethod
+    def mic_positions(mic_r, mic_num, start, clockwise=False):
+        # return mic positions of mic array
+        mic_pos_list = []
+        for mic_id in range(mic_num):
+            theta = mic_id / mic_num * 360 + start
+            mic_pos_list.append(Position(mic_r, theta))
+        if clockwise:
+            # 時計まわりに並んでいる場合は逆にする。
+            mic_pos_list = [mic_pos_list[0]] + mic_pos_list[1:][::-1]
+        print('#Create circular microphone array position')
+        return mic_pos_list
+
+    @staticmethod
+    def ss_positions(radius, min_theta, max_theta, theta_interval):
+        # return sound source theta list , and sound source position class list
+        theta_list = np.arange(min_theta, max_theta + theta_interval, theta_interval)
+        ss_pos_list = []
+        for theta in theta_list:
+            ss_pos_list.append(Position(radius, theta))
+        print('#Create temporal sound source position list')
+        return theta_list, ss_pos_list
+    
+    
+class Position(object):
+    def __init__(self, r, theta):
+        # r[m], theta[deg]
+        theta = theta * math.pi / 180
+        self.x = r * math.cos(theta)
+        self.y = r * math.sin(theta)
+    
+    def pos(self):
+        return self.x, self.y

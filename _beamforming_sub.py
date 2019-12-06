@@ -32,7 +32,7 @@ class SimulationEnvs(object):
         # print('#Create temporal sound source position list')
         # print("theta 0 's direction is", ss_pos_list[0].pos())
         return theta_list, ss_pos_list
-    
+        
     @staticmethod
     def wave_read_func(wave_path):
         with wave.open(wave_path, 'r') as waveFIle:

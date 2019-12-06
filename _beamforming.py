@@ -31,12 +31,13 @@ class BeamForming(SimulationEnvs):
             self.bm_period = int(config['SoundParam']['beamformer_period'])
             self.freq_min = int(config['SoundParam']['freq_min'])
             self.freq_max = int(config['SoundParam']['freq_max'])
-            self.combine_num = int(config['SoundParam']['combine_num'])
-            origin_freq_list = []
-            for k in range(self.combine_num):
-                freq_id = 'original' + str(k + 1) + '_freq'
-                origin_freq_list.append(float(config['SoundParam'][freq_id]))
-            self.origin_freq_list = origin_freq_list
+            if config['SoundParam']['combine_num'] is not None:
+                self.combine_num = int(config['SoundParam']['combine_num'])
+                origin_freq_list = []
+                for k in range(self.combine_num):
+                    freq_id = 'original' + str(k + 1) + '_freq'
+                    origin_freq_list.append(float(config['SoundParam'][freq_id]))
+                self.origin_freq_list = origin_freq_list
             
             # circular microphone
             mic_radius = float(config['MicArray']['radius'])
@@ -125,7 +126,6 @@ class BeamForming(SimulationEnvs):
     def steering_vector(self, freq_array, combine_num, w_channel):
         # freq_array = self.freq_list
         freq_num = freq_array.shape[0]
-        # print(freq_num)
         temp_ss_num = len(self.ss_theta_list)
         
         tf = np.zeros((temp_ss_num, freq_num, w_channel), dtype=np.complex)
@@ -144,7 +144,7 @@ class BeamForming(SimulationEnvs):
         mic_y_array = np.array(mic_y_list)
         
         freq_repeat_array = np.ones((freq_num, w_channel), dtype=np.complex) * freq_array.reshape(
-            (freq_num, -1)) * -1j * 2 * np.pi  # ??
+            (freq_num, -1)) * -1j * 2 * np.pi  # フーリエ変換
         
         for k, ss_pos in enumerate(self.ss_pos_list):
             sx, sy = ss_pos.pos()
