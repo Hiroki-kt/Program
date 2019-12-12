@@ -87,6 +87,7 @@ class MicSet(MyFunc):
         # print("Succsess beamforming", bmp.shape)
         return bmp, bms  # 360*257
         
+        
 if __name__ == '__main__':
     mic_type = 'Respeaker'
     tsp = TSP('./config_tf.ini')

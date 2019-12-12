@@ -1,28 +1,24 @@
 # coding:utf-8
 from matplotlib import pyplot as plt
 import numpy as np
-from _function import MyFunc
-from _tf_generate_tsp import TSP
-from sklearn.decomposition import PCA
-from sklearn.svm import SVC, SVR
-from matplotlib import colors
-from matplotlib import cm
-from sklearn.metrics import accuracy_score
-from scipy import stats
-from configparser import ConfigParser
-from distutils.util import strtobool
-import sys
+from sklearn.svm import SVR
+import joblib
 from sklearn.model_selection import GridSearchCV
 from parametric_eigenspace import PrametricEigenspace
 
 
 class ExecuteSVR(PrametricEigenspace):
-    def __init__(self, data_set_file, use_mic_id=0, use_test_num=2):
+    def __init__(self, data_set_file, use_mic_id=0, use_test_num=2, use_model_file=None):
         super().__init__()
         self.data_set = np.load(data_set_file)
         print()
         print("### Data Set Shape: ", self.data_set.shape)
         self.x, self.x_test, self.y, self.y_test = self.split_train_test(use_mic_id, use_test_num)
+        if use_model_file is None:
+            model = self.svr()
+        else:
+            model = joblib.load(use_model_file)
+        self.model_check(model)
         
     def split_train_test(self, mic, test_num):
         x = np.empty((0, self.data_set.shape[3]), dtype=np.float)
@@ -43,7 +39,7 @@ class ExecuteSVR(PrametricEigenspace):
         test_indices = np.arange(m_train, len(self.y))
         yield (train_indices, test_indices)
         
-    def svr(self):
+    def svr(self, file_name='svr_model.pkl'):
         print("Now fitting ... ")
         params_cnt = 20
         params = {"C": np.logspace(0, 2, params_cnt), "epsilon": np.logspace(-1, 1, params_cnt)}
@@ -53,20 +49,31 @@ class ExecuteSVR(PrametricEigenspace):
         print("最適なパラメーター =", gridsearch.best_params_)
         print("精度 =", gridsearch.best_score_)
         print()
-        regr = SVR(C=gridsearch.best_params_["C"], epsilon=gridsearch.best_params_["epsilon"])
+        svr_model = SVR(C=gridsearch.best_params_["C"], epsilon=gridsearch.best_params_["epsilon"])
+        path = self.make_dir_path(array=True)
+        joblib.dump(svr_model, path + file_name)
+        return svr_model
+        
+    def model_check(self, model):
         train_indices = next(self.gen_cv())[0]
         valid_indices = next(self.gen_cv())[1]
-        regr.fit(self.x[train_indices, :], self.y[train_indices])
+        model.fit(self.x[train_indices, :], self.y[train_indices])
         # テストデータの精度を計算
         print("テストデータにフィット")
-        print("テストデータの精度 =", regr.score(self.x_test, self.y_test))
+        print("テストデータの精度 =", model.score(self.x_test, self.y_test))
         print()
         print("※参考")
-        print("訓練データの精度 =", regr.score(self.x[train_indices, :], self.y[train_indices]))
-        print("交差検証データの精度 =", regr.score(self.x[valid_indices, :], self.y[valid_indices]))
+        print("訓練データの精度 =", model.score(self.x[train_indices, :], self.y[train_indices]))
+        print("交差検証データの精度 =", model.score(self.x[valid_indices, :], self.y[valid_indices]))
         
+        plt.figure()
+        plt.plot(self.DIRECTIONS, model.predict(self.x[100:200]), '.', label="estimated (SVR)")
+        plt.plot(self.DIRECTIONS, self.y[100:200], label="True")
+        plt.legend()
+        plt.show()
         
+
 if __name__ == '__main__':
-    data_set_file = '../_array/191206/glass_plate.npy'
-    es = ExecuteSVR(data_set_file)
-    es.svr()
+    data_set_file = '../_array/191210/glass_plate.npy'
+    model_file = '../_array/191125/svr_model.pkl'
+    es = ExecuteSVR(data_set_file, use_test_num=3, use_model_file=model_file)

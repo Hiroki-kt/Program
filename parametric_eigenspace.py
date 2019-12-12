@@ -123,8 +123,7 @@ class PrametricEigenspace(MyFunc):
             print('finish: ', data_id + 1, '/', recode_num)
             print('***********************************************')
         print('Made data set: ', data_set.shape)
-        output_path = '../_array' + self.make_dir_path()
-        self.my_makedirs(output_path)
+        output_path = self.make_dir_path(array=True)
         np.save(output_path + target + '.npy', data_set)
         
     def pca(self, data_set):

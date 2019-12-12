@@ -46,9 +46,17 @@ class MyFunc:
         if not os.path.isdir(path):
             os.makedirs(path)
     
-    @staticmethod
-    def make_dir_path():
+    def make_dir_path(self, array=False, img=False, exp=False):
         path = '/19' + datetime.today().strftime("%m%d") + '/'
+        if array:
+            path = '../_array' + path
+        elif img:
+            path = '../_img' + path
+        elif exp:
+            path = '../_exp' + path
+
+        print(path)
+        self.my_makedirs(path)
         return path
         
     @staticmethod
