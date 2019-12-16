@@ -7,6 +7,7 @@ import wave
 # import sys
 from scipy import signal
 from datetime import datetime
+import pyaudio
 
 
 class MyFunc:
@@ -133,7 +134,8 @@ class MyFunc:
         wf.setnchannels(channels)
         wf.setsampwidth(width)
         wf.setframerate(sampling)
-        wf.writeframes(b''.join(data))
+        # wf.writeframes(b''.join(data))
+        wf.writeframes(data)
         wf.close()
         print('saved', wave_file)
         
@@ -205,7 +207,21 @@ class MyFunc:
             ss_pos_list.append(Position(radius, theta))
         print('#Create temporal sound source position list')
         return theta_list, ss_pos_list
-    
+
+    @staticmethod
+    def get_mic_index(device_name):
+        audio = pyaudio.PyAudio()
+        audio_num = audio.get_device_count()
+        print('searching:' + device_name + '......')
+        for x in range(0, audio_num):
+            device_info = audio.get_device_info_by_index(x)
+            if device_name in device_info.values():
+                print('find mic')
+                # print(device_info)
+                channels = device_info['maxInputChannels']
+                return x, channels
+        print('can not find:' + device_name)
+        
     
 class Position(object):
     def __init__(self, r, theta):
