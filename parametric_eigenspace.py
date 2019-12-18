@@ -13,7 +13,7 @@ from configparser import ConfigParser
 from distutils.util import strtobool
 import sys
 from mpl_toolkits.mplot3d import Axes3D
-# from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler
 # from sklearn.metrics import confusion_matrix
 # from sklearn.preprocessing import StandardScaler
 
@@ -39,8 +39,8 @@ class PrametricEigenspace(MyFunc):
         # Speaker sound
         file_name = config['Speaker_Sound']['File']
         origin_sound_path = self.speaker_sound_path + file_name
-        origin_data, channel, origin_sampling, origin_frames = self.wave_read_func(origin_sound_path)
-        self.fft_list = np.fft.rfftfreq(origin_frames, 1 / origin_sampling)
+        origin_data, channel, origin_sampling, self.origin_frames = self.wave_read_func(origin_sound_path)
+        self.fft_list = np.fft.rfftfreq(self.origin_frames, 1 / origin_sampling)
         self.freq_min_id = self.freq_ids(self.fft_list, freq_min)
         self.freq_max_id = self.freq_ids(self.fft_list, freq_max)
         self.data_set_freq_len = self.freq_max_id - self.freq_min_id - (self.smooth_step - 1)
@@ -90,6 +90,7 @@ class PrametricEigenspace(MyFunc):
     def make_data_set_recode_individually(self, recode_num, mic_num, target='glass_plate', mic_name='Respeaker'):
         wave_path = self.recode_data_path + self.data_search(self.date, self.sound_kind, self.geometric,
                                                              plane_wave=self.plane_wave)
+        print(wave_path)
         data_set = np.zeros((len(self.DIRECTIONS), mic_num, recode_num, self.data_set_freq_len), dtype=np.float)
         for data_id in range(recode_num):
             for data_dir in self.DIRECTIONS:
@@ -102,12 +103,22 @@ class PrametricEigenspace(MyFunc):
                 else:
                     print("Error")
                     sys.exit()
+                start_time = self.zero_cross(sound_data, 128, sampling, 512, up=True)
+                if start_time != 0:
+                    sound_data = sound_data[:, start_time: int(start_time + self.origin_frames)]
+                    # print(sound_data.shape)
+                else:
+                    print("ERROR")
+                    sys.exit()
                 if data_dir == -50:
                     print("#######################")
                     print("This mic is ", mic_name)
                     print("Channel ", channel)
                     print("Frames ", frames)
-                    print("Object", target)
+                    print("Data Set ", sound_data.shape)
+                    print("0Cross point ", start_time)
+                    print("Object ", target)
+                    print("Rate ", sampling)
                     print("#######################")
                 fft_data = np.fft.rfft(sound_data)
                 for mic in range(fft_data.shape[0]):
@@ -126,10 +137,14 @@ class PrametricEigenspace(MyFunc):
         output_path = self.make_dir_path(array=True)
         np.save(output_path + target + '.npy', data_set)
         
-    def pca(self, data_set):
+    def pca(self, data_set, label):
+        ss = StandardScaler()
+        data_set = ss.fit_transform(data_set)
         pca = PCA()
         pca.fit(data_set)
         feature = pca.transform(data_set)
+        pc1 = pca.components_[0]
+        pc2 = pca.components_[1]
         print(feature.shape)
         # print(feature[:, 0])
         '''寄与率'''
@@ -139,15 +154,50 @@ class PrametricEigenspace(MyFunc):
         '''作図'''
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
-        ax.scatter(feature[:, 0], feature[:, 1], feature[:, 2], marker='o', c=self.DIRECTIONS, cmap='winter')
+        ax.scatter(feature[:, 0], feature[:, 1], feature[:, 2], marker='o', c=label, cmap='winter')
         '''作図設定'''
         colormap = plt.get_cmap('winter')
         norm = colors.Normalize(vmin=min(self.DIRECTIONS), vmax=max(self.DIRECTIONS))
         mappable = cm.ScalarMappable(cmap=colormap, norm=norm)
         mappable._A = []
-        # ax.set_xlim(-29500, -27000)
-        # ax.set_ylim(-14000, -11000)
         plt.colorbar(mappable)
+        plt.show()
+        
+        plt.figure()
+        plt.scatter(feature[:, 0], feature[:, 1], marker='o', c=label, cmap='winter')
+        colormap = plt.get_cmap('winter')
+        norm = colors.Normalize(vmin=min(self.DIRECTIONS), vmax=max(self.DIRECTIONS))
+        mappable = cm.ScalarMappable(cmap=colormap, norm=norm)
+        mappable._A = []
+        plt.colorbar(mappable)
+        plt.show()
+        
+        plt.figure()
+        # plt.scatter(feature[:, 0], feature[:, 1], marker='o', c=label, cmap='winter')
+        arrow_mul = 15
+        text_mul = 1.1
+        use_fft_list =self.fft_list[self.freq_min_id:self.freq_max_id]
+        feature_names = ["{0}".format(int(i)) for i in use_fft_list]
+        test = range(0, pc1.shape[0], 50)
+        pc1_list = []
+        pc2_list = []
+        for i in test:
+            plt.arrow(0, 0,
+                      pc1[i] * arrow_mul, pc2[i] * arrow_mul, alpha=0.5)
+            plt.text(pc1[i] * arrow_mul * text_mul,
+                     pc2[i] * arrow_mul * text_mul,
+                     feature_names[i],
+                     color='r')
+            pc1_list.append(pc1[i] * arrow_mul)
+            pc2_list.append(pc2[i] * arrow_mul)
+        plt.scatter(pc1_list, pc2_list, marker='o', c=test, cmap='spring')
+        colormap = plt.get_cmap('spring')
+        norm = colors.Normalize(vmin=min(use_fft_list), vmax=max(use_fft_list))
+        mappable = cm.ScalarMappable(cmap=colormap, norm=norm)
+        mappable._A = []
+        plt.colorbar(mappable)
+        plt.xlim(-1, 1)
+        plt.ylim(-1, 1)
         plt.show()
     
     def label(self, label_len, step=None):

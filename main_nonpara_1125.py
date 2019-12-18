@@ -28,7 +28,7 @@ class NonParametric(PrametricEigenspace):
             grid = self.gridresearch(output_pkl_file_name)
         else:
             grid = joblib.load(use_model_file)
-        print(grid)
+        # print(grid)
         self.svr_model_ver2 = self.svr_ver2(grid)
         
     def make_data(self, mic, test_num):
@@ -65,7 +65,7 @@ class NonParametric(PrametricEigenspace):
         print("C, εのチューニング")
         print("最適なパラメーター =", gridsearch.best_params_)
         print("精度 =", gridsearch.best_score_)
-        output_path = '../array' + self.make_dir_path()
+        output_path = self.make_dir_path(array=True)
         self.my_makedirs(output_path)
         joblib.dump(gridsearch.best_estimator_, output_path + output_name)
         return gridsearch
@@ -108,7 +108,7 @@ class NonParametric(PrametricEigenspace):
         print()
         return regr
     
-    def estimate(self, test_data):
+    def svm_svr_estimate(self, test_data):
         pred_svm = self.svm_model.predict(test_data)
         # print(pred_svm)
         if len(pred_svm) == 1:
@@ -121,19 +121,19 @@ class NonParametric(PrametricEigenspace):
     
 
 if __name__ == '__main__':
-    npm = NonParametric(use_data_npy='normalize.npy', use_model_file='test.pkl')
-    estimate_list = []
+    npm = NonParametric(use_data_npy='./normalize.npy', use_model_file='../_array/191217/svr_gridsearch.pkl')
+    # estimate_list = []
     estimate_list_2 = []
     for test_deg in range(100):
-        estimate = npm.estimate(npm.data[test_deg:test_deg+1, 0, 6, :])
+        # estimate = npm.svm_svr_estimate(npm.data[test_deg:test_deg + 1, 0, 6, :])
         estimate_ver2 = npm.svr_model_ver2.predict(npm.x_test[test_deg:test_deg+1, :])
         # print(test_deg - 50)
-        estimate_list.append(estimate[0])
+        # estimate_list.append(estimate[0])
         estimate_list_2.append((estimate_ver2[0]))
         
     plt.figure()
-    plt.plot(npm.DIRECTIONS, estimate_list, '.', label='SVM+SVR estimate')
-    # plt.plot(npm.DIRECTIONS, estimate_list_2, '.', label='SVR(Using Grid Search) estimate')
+    # plt.plot(npm.DIRECTIONS, estimate_list, '.', label='SVM+SVR estimate')
+    plt.plot(npm.DIRECTIONS, estimate_list_2, '.', label='SVR(Using Grid Search) estimate')
     plt.plot(npm.DIRECTIONS, npm.DIRECTIONS, label='True')
     plt.ylim(-50, 50)
     plt.xlabel("Estimated Azimuth [deg]")

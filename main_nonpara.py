@@ -5,10 +5,13 @@ from sklearn.svm import SVR
 import joblib
 from sklearn.model_selection import GridSearchCV
 from parametric_eigenspace import PrametricEigenspace
+from sklearn.metrics import mean_squared_error
+from sklearn.linear_model import LinearRegression
+import random
 
 
 class ExecuteSVR(PrametricEigenspace):
-    def __init__(self, data_set_file, use_mic_id=0, use_test_num=2, use_model_file=None):
+    def __init__(self, data_set_file, use_mic_id=0, use_test_num=3, use_model_file=None):
         super().__init__()
         self.data_set = np.load(data_set_file)
         print()
@@ -18,7 +21,8 @@ class ExecuteSVR(PrametricEigenspace):
             model = self.svr()
         else:
             model = joblib.load(use_model_file)
-        self.model_check(model)
+        # self.model_check(model)
+        # self.pca_check()
         
     def split_train_test(self, mic, test_num):
         x = np.empty((0, self.data_set.shape[3]), dtype=np.float)
@@ -66,14 +70,31 @@ class ExecuteSVR(PrametricEigenspace):
         print("訓練データの精度 =", model.score(self.x[train_indices, :], self.y[train_indices]))
         print("交差検証データの精度 =", model.score(self.x[valid_indices, :], self.y[valid_indices]))
         
+        print()
+        print("結果")
+        print(model.predict(self.x[100:200]))
+        
         plt.figure()
         plt.plot(self.DIRECTIONS, model.predict(self.x[100:200]), '.', label="estimated (SVR)")
         plt.plot(self.DIRECTIONS, self.y[100:200], label="True")
         plt.legend()
         plt.show()
         
+        test_num = random.randint(-45, 45)
+        print()
+        print("3つのデータの平均を出力")
+        print(test_num)
+        print(np.average(model.predict(self.x[test_num+49:test_num+52])))
+        
+        print()
+        print('RMSE')
+        print(np.sqrt(mean_squared_error(self.y[10:90], model.predict(self.x[10:90]))))
+        
+    def pca_check(self):
+        self.pca(self.x, self.y)
 
+        
 if __name__ == '__main__':
-    data_set_file = '../_array/191210/glass_plate.npy'
-    model_file = '../_array/191125/svr_model.pkl'
-    es = ExecuteSVR(data_set_file, use_test_num=3, use_model_file=model_file)
+    data_set_file = '../_array/191217/1205_glass_plate_0cross.npy'
+    model_file = '../_array/191217/1205_svr_model_0cross.pkl'
+    es = ExecuteSVR(data_set_file, use_mic_id=3, use_test_num=3, use_model_file=model_file)
