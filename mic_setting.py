@@ -40,8 +40,11 @@ class MicSet(MyFunc):
         
         self.sound_speed = 340
 
-    def steering_vector_azimuth(self, n, d):
-        freq_array = np.fft.rfftfreq(n, d)
+    def steering_vector_azimuth(self, n, d, use_list=None):
+        if use_list is not None:
+            freq_array=use_list
+        else:
+            freq_array = np.fft.rfftfreq(n, d)
         tf = np.zeros((self.ss_list.shape[0], freq_array.shape[0], self.mic_channel_num), dtype=np.complex)
         # beam_conf = np.zeros((temp_ss_num, freq_num, w_channel), dtype=np.complex)
     
@@ -85,7 +88,7 @@ class MicSet(MyFunc):
         # self.bms = bms
         # self.bmp = bmp
         # print("Succsess beamforming", bmp.shape)
-        return bmp, bms  # 360*257
+        return bmp  # 360*257
         
         
 if __name__ == '__main__':
@@ -100,8 +103,8 @@ if __name__ == '__main__':
     frq, time, Pxx = signal.stft(cut_data, sampling, nperseg=FRAME)
     # print(tf.shape, len(frq), Pxx.shape)
     for t in time:
-        bm_result_array, bms = ms.beam_forming_localization(Pxx[:, :, int(t)], tf, frq)
-        bmp = bms.sum(axis=1)
+        bm_result = ms.beam_forming_localization(Pxx[:, :, int(t)], tf, frq)
+        bmp = bm_result.sum(axis=1)
         # print(bmp.shape)
         x = np.cos(np.deg2rad(range(360)))
         y = np.sin(np.deg2rad(range(360)))

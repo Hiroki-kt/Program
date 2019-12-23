@@ -16,10 +16,11 @@ from mpl_toolkits.mplot3d import Axes3D
 from sklearn.preprocessing import StandardScaler
 # from sklearn.metrics import confusion_matrix
 # from sklearn.preprocessing import StandardScaler
+from mic_setting import MicSet
 
 
 class PrametricEigenspace(MyFunc):
-    def __init__(self, config_path='config_nonpara.ini'):
+    def __init__(self, config_path='config_nonpara.ini', beam=False):
         super().__init__()
         config = ConfigParser()
         config.read(config_path)
@@ -44,6 +45,13 @@ class PrametricEigenspace(MyFunc):
         self.freq_min_id = self.freq_ids(self.fft_list, freq_min)
         self.freq_max_id = self.freq_ids(self.fft_list, freq_max)
         self.data_set_freq_len = self.freq_max_id - self.freq_min_id - (self.smooth_step - 1)
+        self.use_fft_list = self.fft_list[self.freq_min_id:self.freq_max_id]
+        self.beam = beam
+        self.mic_name = 'Respeaker'
+        if beam:
+            self.ms = MicSet(self.mic_name)
+            self.tf = self.ms.steering_vector_azimuth(self.origin_frames, 1/origin_sampling, self.use_fft_list)
+            print("make stearing vector for beamforming")
         
     def make_data_set(self, individual=False):
         tsp = TSP('./config_tf.ini')
@@ -87,18 +95,22 @@ class PrametricEigenspace(MyFunc):
             print('Made data set: ', data_set.shape)
             return np.real(data_set)
     
-    def make_data_set_recode_individually(self, recode_num, mic_num, target='glass_plate', mic_name='Respeaker'):
+    def make_data_set_recode_individually(self, recode_num, mic_num, target='glass_plate'):
         wave_path = self.recode_data_path + self.data_search(self.date, self.sound_kind, self.geometric,
                                                              plane_wave=self.plane_wave)
         print(wave_path)
-        data_set = np.zeros((len(self.DIRECTIONS), mic_num, recode_num, self.data_set_freq_len), dtype=np.float)
+        if self.beam:
+            data_set = np.zeros((len(self.DIRECTIONS), len(self.ms.ss_list), recode_num, self.data_set_freq_len),
+                                dtype=np.float)
+        else:
+            data_set = np.zeros((len(self.DIRECTIONS), mic_num, recode_num, self.data_set_freq_len), dtype=np.float)
         for data_id in range(recode_num):
             for data_dir in self.DIRECTIONS:
                 sound_data, channel, sampling, frames = \
                     self.wave_read_func(wave_path + target + '_' + str(data_id+1) + '/' + str(data_dir) + '.wav')
-                if mic_name == 'Respeaker':
+                if self.mic_name == 'Respeaker':
                     sound_data = np.delete(sound_data, [0, 5], 0)
-                elif mic_name == 'Matrix':
+                elif self.mic_name == 'Matrix':
                     sound_data = np.delete(sound_data, 0, 0)
                 else:
                     print("Error")
@@ -110,9 +122,9 @@ class PrametricEigenspace(MyFunc):
                 else:
                     print("ERROR")
                     sys.exit()
-                if data_dir == -50:
+                if data_dir == self.DIRECTIONS[0]:
                     print("#######################")
-                    print("This mic is ", mic_name)
+                    print("This mic is ", self.mic_name)
                     print("Channel ", channel)
                     print("Frames ", frames)
                     print("Data Set ", sound_data.shape)
@@ -121,21 +133,31 @@ class PrametricEigenspace(MyFunc):
                     print("Rate ", sampling)
                     print("#######################")
                 fft_data = np.fft.rfft(sound_data)
-                for mic in range(fft_data.shape[0]):
-                    smooth_data = np.convolve(np.abs(fft_data[mic, self.freq_min_id:self.freq_max_id]),
-                                              np.ones(self.smooth_step) / float(self.smooth_step), mode='valid')
-                    smooth_data = np.real(np.reshape(smooth_data, (1, -1)))[0]
-                    normalize_data = stats.zscore(smooth_data, axis=0)
-                    # normalize_data = (smooth_data - smooth_data.mean()) / smooth_data.std()
-                    # normalize_data = (smooth_data - min(smooth_data))/(max(smooth_data) - min(smooth_data))
-                    data_set[data_dir, mic, data_id, :] = normalize_data
+                if self.beam:
+                    bmp = self.ms.beam_forming_localization(fft_data[:, self.freq_min_id:self.freq_max_id],
+                                                            self.tf, self.fft_list)
+                    for dir in range(bmp.shape[0]):
+                        smooth_data = np.convolve(np.abs(bmp[dir, :]),
+                                                  np.ones(self.smooth_step) / float(self.smooth_step), mode='valid')
+                        smooth_data = np.real(np.reshape(smooth_data, (1, -1)))[0]
+                        normalize_data = stats.zscore(smooth_data, axis=0)  # 平均0 分散1
+                        data_set[data_dir, dir, data_id, :] =normalize_data
+                else:
+                    for mic in range(fft_data.shape[0]):
+                        smooth_data = np.convolve(np.abs(fft_data[mic, self.freq_min_id:self.freq_max_id]),
+                                                  np.ones(self.smooth_step) / float(self.smooth_step), mode='valid')
+                        smooth_data = np.real(np.reshape(smooth_data, (1, -1)))[0]
+                        normalize_data = stats.zscore(smooth_data, axis=0)  # 平均0 分散1
+                        # normalize_data = (smooth_data - smooth_data.mean()) / smooth_data.std()
+                        # normalize_data = (smooth_data - min(smooth_data))/(max(smooth_data) - min(smooth_data))
+                        data_set[data_dir, mic, data_id, :] = normalize_data
 
                 # print('finish: ', data_dir + 50 + 1, '/', len(self.DIRECTIONS))
             print('finish: ', data_id + 1, '/', recode_num)
             print('***********************************************')
         print('Made data set: ', data_set.shape)
         output_path = self.make_dir_path(array=True)
-        np.save(output_path + target + '.npy', data_set)
+        np.save(output_path + target + '_beam.npy', data_set)
         
     def pca(self, data_set, label):
         ss = StandardScaler()
@@ -163,42 +185,50 @@ class PrametricEigenspace(MyFunc):
         plt.colorbar(mappable)
         plt.show()
         
+        # plt.figure()
+        # plt.scatter(feature[:, 0], feature[:, 1], marker='o', c=label, cmap='winter')
+        # colormap = plt.get_cmap('winter')
+        # norm = colors.Normalize(vmin=min(self.DIRECTIONS), vmax=max(self.DIRECTIONS))
+        # mappable = cm.ScalarMappable(cmap=colormap, norm=norm)
+        # mappable._A = []
+        # plt.colorbar(mappable)
+        # plt.show()
+        
         plt.figure()
-        plt.scatter(feature[:, 0], feature[:, 1], marker='o', c=label, cmap='winter')
-        colormap = plt.get_cmap('winter')
-        norm = colors.Normalize(vmin=min(self.DIRECTIONS), vmax=max(self.DIRECTIONS))
-        mappable = cm.ScalarMappable(cmap=colormap, norm=norm)
-        mappable._A = []
-        plt.colorbar(mappable)
+        plt.plot(pc1)
         plt.show()
         
         plt.figure()
-        # plt.scatter(feature[:, 0], feature[:, 1], marker='o', c=label, cmap='winter')
-        arrow_mul = 15
-        text_mul = 1.1
-        use_fft_list =self.fft_list[self.freq_min_id:self.freq_max_id]
-        feature_names = ["{0}".format(int(i)) for i in use_fft_list]
-        test = range(0, pc1.shape[0], 50)
-        pc1_list = []
-        pc2_list = []
-        for i in test:
-            plt.arrow(0, 0,
-                      pc1[i] * arrow_mul, pc2[i] * arrow_mul, alpha=0.5)
-            plt.text(pc1[i] * arrow_mul * text_mul,
-                     pc2[i] * arrow_mul * text_mul,
-                     feature_names[i],
-                     color='r')
-            pc1_list.append(pc1[i] * arrow_mul)
-            pc2_list.append(pc2[i] * arrow_mul)
-        plt.scatter(pc1_list, pc2_list, marker='o', c=test, cmap='spring')
-        colormap = plt.get_cmap('spring')
-        norm = colors.Normalize(vmin=min(use_fft_list), vmax=max(use_fft_list))
-        mappable = cm.ScalarMappable(cmap=colormap, norm=norm)
-        mappable._A = []
-        plt.colorbar(mappable)
-        plt.xlim(-1, 1)
-        plt.ylim(-1, 1)
+        plt.plot(pc2)
         plt.show()
+        
+        # plt.figure()
+        # # plt.scatter(feature[:, 0], feature[:, 1], marker='o', c=label, cmap='winter')
+        # arrow_mul = 15
+        # text_mul = 1.1
+        # use_fft_list =self.fft_list[self.freq_min_id:self.freq_max_id]
+        # feature_names = ["{0}".format(int(i)) for i in use_fft_list]
+        # test = range(0, pc1.shape[0], 50)
+        # pc1_list = []
+        # pc2_list = []
+        # for i in test:
+        #     plt.arrow(0, 0,
+        #               pc1[i] * arrow_mul, pc2[i] * arrow_mul, alpha=0.5)
+        #     plt.text(pc1[i] * arrow_mul * text_mul,
+        #              pc2[i] * arrow_mul * text_mul,
+        #              feature_names[i],
+        #              color='r')
+        #     pc1_list.append(pc1[i] * arrow_mul)
+        #     pc2_list.append(pc2[i] * arrow_mul)
+        # plt.scatter(pc1_list, pc2_list, marker='o', c=test, cmap='spring')
+        # colormap = plt.get_cmap('spring')
+        # norm = colors.Normalize(vmin=min(use_fft_list), vmax=max(use_fft_list))
+        # mappable = cm.ScalarMappable(cmap=colormap, norm=norm)
+        # mappable._A = []
+        # plt.colorbar(mappable)
+        # plt.xlim(-1, 1)
+        # plt.ylim(-1, 1)
+        # plt.show()
     
     def label(self, label_len, step=None):
         if step is None:

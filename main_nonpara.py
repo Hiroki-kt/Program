@@ -21,8 +21,8 @@ class ExecuteSVR(PrametricEigenspace):
             model = self.svr()
         else:
             model = joblib.load(use_model_file)
-        # self.model_check(model)
-        # self.pca_check()
+        self.model_check(model)
+        self.pca_check()
         
     def split_train_test(self, mic, test_num):
         x = np.empty((0, self.data_set.shape[3]), dtype=np.float)
@@ -96,5 +96,5 @@ class ExecuteSVR(PrametricEigenspace):
         
 if __name__ == '__main__':
     data_set_file = '../_array/191217/1205_glass_plate_0cross.npy'
-    model_file = '../_array/191217/1205_svr_model_0cross.pkl'
-    es = ExecuteSVR(data_set_file, use_mic_id=3, use_test_num=3, use_model_file=model_file)
+    model_file = '../_array/191217/1025_svr_model.pkl'
+    es = ExecuteSVR(data_set_file, use_mic_id=0, use_test_num=2, use_model_file=model_file)
