@@ -95,6 +95,6 @@ class ExecuteSVR(PrametricEigenspace):
 
         
 if __name__ == '__main__':
-    data_set_file = '../_array/191217/1205_glass_plate_0cross.npy'
+    data_set_file = '../_array/191217/1025_glass_plate.npy'
     model_file = '../_array/191217/1025_svr_model.pkl'
     es = ExecuteSVR(data_set_file, use_mic_id=0, use_test_num=2, use_model_file=model_file)

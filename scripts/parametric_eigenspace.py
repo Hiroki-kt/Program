@@ -45,7 +45,7 @@ class PrametricEigenspace(MyFunc):
         self.freq_min_id = self.freq_ids(self.fft_list, freq_min)
         self.freq_max_id = self.freq_ids(self.fft_list, freq_max)
         self.data_set_freq_len = self.freq_max_id - self.freq_min_id - (self.smooth_step - 1)
-        self.use_fft_list = self.fft_list[self.freq_min_id:self.freq_max_id]
+        self.use_fft_list = self.fft_list[self.freq_min_id + int(self.smooth_step/2) -1:self.freq_max_id - int(self.smooth_step/2)]
         self.beam = beam
         self.mic_name = 'Respeaker'
         if beam:
@@ -167,6 +167,7 @@ class PrametricEigenspace(MyFunc):
         feature = pca.transform(data_set)
         pc1 = pca.components_[0]
         pc2 = pca.components_[1]
+        pc3 = pca.components_[2]
         print(feature.shape)
         # print(feature[:, 0])
         '''寄与率'''
@@ -194,12 +195,26 @@ class PrametricEigenspace(MyFunc):
         # plt.colorbar(mappable)
         # plt.show()
         
-        plt.figure()
-        plt.plot(pc1)
-        plt.show()
+        fig = plt.figure()
+        ax1 = fig.add_subplot(3, 1, 1)
+        ax2 = fig.add_subplot(3, 1, 2)
+        ax3 = fig.add_subplot(3, 1, 3)
+        ax1.plot(self.use_fft_list, np.abs(pc1), label='PC1')
+        ax2.plot(self.use_fft_list, np.abs(pc2), label='PC2')
+        ax3.plot(self.use_fft_list, np.abs(pc3), label='PC3')
+        axs = plt.gcf().get_axes()
+
+        # 軸毎にループ
+        for ax in axs:
+            # 現在の軸を変更
+            plt.axes(ax)
+    
+            # 凡例を表示
+            plt.legend()
         
-        plt.figure()
-        plt.plot(pc2)
+            # 軸の範囲
+            plt.ylim([0, 0.08])
+        plt.xlabel('Frequency [Hz]')
         plt.show()
         
         # plt.figure()
