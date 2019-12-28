@@ -1,15 +1,30 @@
-# NAIST Research Program
+# robot-auditon
 
-## 作成中
-* 考察中
+Tool box for robot audition especially used for robot manipulation.
 
-## 完成はしたが、バグあり
-* realtime_plot.py: 音をリアルタイムにとり、プロット
-* recode_sound.py: 音の収録をする
+## Features
 
-## 作成済み
-* main_test.py, test_wav_file.py: アルゴリズム確認用プログラム
+- Easy to get a sound data and to analyze it.
 
-## 過去研究
-* beamforming.py, simulation_envs.py: NLOS音源の推定の際に用いたbeamformingシステム
+## Installation/Requirement
 
+Under construction.
+
+## Usage
+
+    # few bugs in these codes
+    $ realtime_plot.py      # plot while getting the sound data for which sensor?
+    $ recode_sound.py       # to record the sound data for which sensor?
+
+    # maintaining code
+    $ main_test.py          # for testing what?
+    $ test_wav_file.py      # for testing what?
+
+    # utility codes
+    $ beamforming.py        
+    $ simulation_envs.py    # beamforming in NLOS sound source estimation
+
+## Author
+
+[Hiroki Katayama](https://github.com/Hiroki-kt)  
+[Takuya Kiyokawa](https://takuya-ki.github.io/)
