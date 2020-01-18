@@ -12,7 +12,7 @@ import pyaudio
 
 class MyFunc:
     def __init__(self):
-        self.onedrive_path = '../../../../OneDrive/Research/'
+        self.onedrive_path = '../../../../../OneDrive/Research/'
         self.recode_data_path = self.onedrive_path + 'Recode_Data/'
         self.speaker_sound_path = self.onedrive_path + 'Speaker_Sound/'
         
@@ -48,15 +48,15 @@ class MyFunc:
             os.makedirs(path)
     
     def make_dir_path(self, array=False, img=False, exp=False):
-        path = '/19' + datetime.today().strftime("%m%d") + '/'
+        path = '/20' + datetime.today().strftime("%m%d") + '/'
         if array:
-            path = '../_array' + path
+            path = '../../_array' + path
         elif img:
-            path = '../_img' + path
+            path = '../../_img' + path
         elif exp:
-            path = '../_exp' + path
+            path = '../../_exp' + path
 
-        print(path)
+        # print(path)
         self.my_makedirs(path)
         return path
         
@@ -140,27 +140,31 @@ class MyFunc:
         print('saved', wave_file)
         
     @staticmethod
-    def zero_cross(data, step, sampling, size, up=False):
-        start = count = 0
+    def zero_cross(data, step, sampling, size, need_frames, up=False):
+        start = 0
+        count = 0
         zero_cross = []
+        frame_list = []
         time_list = []
-        while count < sampling/step:
+        while count < need_frames /step:
             sign = np.diff(np.sign(data[:, start: start + size]))
             zero_cross.append(np.where(sign)[1].shape[0])
-            time_list.append(start)
+            frame_list.append(start)
+            time_list.append(start/sampling)
             start = start + step
             count += 1
         # plt.figure()
         # plt.plot(time_list, zero_cross)
+        # plt.ylim(200, 1000)
+        # plt.xlim(0, 1.2)
         # plt.show()
         if up:
-            peak = signal.argrelmin(np.array(zero_cross), order=10)
-            time_id = peak[0][np.argmin(np.array(zero_cross)[peak])]
+            peak = signal.argrelmax(np.array(zero_cross), order=10)
+            time_id = peak[0][np.argmax(np.array(zero_cross)[peak])]
         else:
             peak = signal.argrelmax(np.array(zero_cross), order=10)
             time_id = peak[0][np.argmax(np.array(zero_cross)[peak])]
-        START_TIME = time_list[int(time_id)]
-        # print(START_TIME)
+        START_TIME = frame_list[int(time_id)] - need_frames
         return START_TIME
     
     @staticmethod

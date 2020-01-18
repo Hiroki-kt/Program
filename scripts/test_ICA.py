@@ -10,7 +10,7 @@ class ICA:
         if wave_path is not None:
             CONFIG_PATH = "./config_tf.ini"
             data, channels, samlpling, frames = MyFunc().wave_read_func(wave_path)
-            data = TSP(CONFIG_PATH).cut_tsp_data(use_data=data)
+            data = TSP(CONFIG_PATH).cut_up_tsp_data(use_data=data)
         elif wave_data is not None:
             data = wave_data
         else:

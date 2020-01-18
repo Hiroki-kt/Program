@@ -44,7 +44,7 @@ class TSP(MyFunc):
                 Tsp, self.TSP_CHANNELS, self.TSP_SAMPLING, self.TSP_FRAMES = self.wave_read_func(self.TSP_PATH)
                 self.TSP = Tsp[0]
                 self.ITSP = self.TSP[::-1]
-            print(self.TSP.shape, self.ITSP.shape)
+            print('TSP signal frames', self.TSP.shape, '/ Inverse TSP signal frames', self.ITSP.shape)
             self.FIG_PATH = '../_img/19' + datetime.today().strftime("%m%d") + '/' + \
                             datetime.today().strftime("%H%M%S") + "/"
             # self.my_makedirs(self.FIG_PATH)
@@ -53,7 +53,7 @@ class TSP(MyFunc):
             print("#couldn't find", config_path)
             sys.exit()
     
-    def cut_tsp_data(self, num=None, use_data=None, individual=False):
+    def cut_up_tsp_data(self, num=None, use_data=None, individual=False):
         # Initialization
         if num is not None:
             file = self.SOUND_PATH + str(num) + '.wav'
@@ -67,19 +67,18 @@ class TSP(MyFunc):
             return -1
         origin_sound = np.delete(origin_sound, [0, 5], 0)
         # Zero Cross
-        START_TIME = self.zero_cross(origin_sound, self.CROSS0_STEP, sampling, self.CROSS0_SIZE, up=True)
-        # print(START_TIME)
-        if START_TIME != 0:
-            use_sound = origin_sound[:, START_TIME: int(START_TIME + self.TSP_FRAMES * self.NEED_NUM)]
-            use_sound = np.reshape(use_sound, (self.MIC_NUM, self.NEED_NUM, -1))
-            # print(use_sound.shape)
-            if individual:
-                return use_sound
-            else:
-                tsp_res = np.average(use_sound, axis=1)
-                return tsp_res
+        START_TIME = self.zero_cross(origin_sound, self.CROSS0_STEP, sampling, self.CROSS0_SIZE, up=True) - self.TSP_FRAMES
+        print(START_TIME)
+        if START_TIME < 0:
+            START_TIME = 0
+        use_sound = origin_sound[:, START_TIME: int(START_TIME + self.TSP_FRAMES * self.NEED_NUM)]
+        use_sound = np.reshape(use_sound, (self.MIC_NUM, self.NEED_NUM, -1))
+        # print(use_sound.shape)
+        if individual:
+            return use_sound
         else:
-            return -1
+            tsp_res = np.average(use_sound, axis=1)
+            return tsp_res
     
     def generate_tf(self, tsp_res):
         # plt.figure()
@@ -129,7 +128,7 @@ if __name__ == '__main__':
     # time.sleep(30)
     for i, deg in enumerate(DIRECTIONS):
         print(deg)
-        data = tsp.cut_tsp_data(num=deg)
+        data = tsp.cut_up_tsp_data(num=deg)
         for mic in range(tsp.MIC_NUM):
             tf, fft_tf = tsp.generate_tf(data[mic, :, :])
             # max_array[mic, i] = np.max(tf)

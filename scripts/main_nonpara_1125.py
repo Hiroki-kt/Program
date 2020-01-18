@@ -9,7 +9,7 @@ from sklearn.externals import joblib
 
 class NonParametric(PrametricEigenspace):
     def __init__(self, use_data_npy=None, use_model_file=None, config='config_nonpara.ini',
-                 output_pkl_file_name='svr_gridsearch.pkl', recode_inddividual=None, use_mic=1, test_data_num=2):
+                 output_pkl_file_name='svr_gridsearch.pkl', recode_inddividual=None, use_mic=1, test_data_num=2, ):
         super().__init__(config_path=config)
         if use_data_npy is None:
             if recode_inddividual is not None:
@@ -23,7 +23,6 @@ class NonParametric(PrametricEigenspace):
         '''Make data set'''
         self.x, self.y, self.x_test, self.y_test = self.make_data(use_mic, test_data_num)
         '''Make model'''
-        # self.svm_model, self.svr_model = self.svm_svr()
         if use_model_file is None:
             grid = self.gridresearch(output_pkl_file_name)
         else:
@@ -69,20 +68,6 @@ class NonParametric(PrametricEigenspace):
         self.my_makedirs(output_path)
         joblib.dump(gridsearch.best_estimator_, output_path + output_name)
         return gridsearch
-        
-    def svm_svr(self, svm_step=20):
-        step_all = svm_step
-        post = 0
-        label_svm = self.label(self.data.shape[0], step=svm_step)
-        svm_model = self.support_vector_machine(self.data, label_svm)
-        svr_model_list = []
-        for i in range(int(self.data.shape[0]/svm_step)):
-            model = self.support_vector_regression(self.data[post:svm_step, :, :, :], self.DIRECTIONS[post:svm_step])
-            # print(pe.DIRECTIONS[post:step])
-            post = svm_step
-            svm_step += step_all
-            svr_model_list.append(model)
-        return svm_model, svr_model_list
 
     def svr_ver2(self, gridsearch):
         if isinstance(gridsearch, SVR):
@@ -107,17 +92,6 @@ class NonParametric(PrametricEigenspace):
         print("交差検証データの精度 =", regr.score(self.x[valid_indices, :], np.array(self.y)[valid_indices]))
         print()
         return regr
-    
-    def svm_svr_estimate(self, test_data):
-        pred_svm = self.svm_model.predict(test_data)
-        # print(pred_svm)
-        if len(pred_svm) == 1:
-            pred_svr = self.svr_model[int(pred_svm[0])].predict(test_data)
-            # print(pred_svr)
-            return pred_svr
-        else:
-            print('ERROR')
-            sys.exit()
     
 
 if __name__ == '__main__':
