@@ -1,5 +1,5 @@
 import numpy as np
-from main_nonpara import ExecuteSVR
+from _support_vector_regression import ExecuteSVR
 import pandas as pd
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import mean_squared_error

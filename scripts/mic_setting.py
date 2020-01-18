@@ -97,7 +97,7 @@ if __name__ == '__main__':
     ms = MicSet(mic_type)
     wave_path = ms.recode_data_path + ms.data_search(191015, 'Ts', '01', plane_wave=False) + '10.wav'
     data, channels, sampling, framse = ms.wave_read_func(wave_path)
-    cut_data = tsp.cut_tsp_data(use_data=data)
+    cut_data = tsp.cut_up_tsp_data(use_data=data)
     FRAME = 1024
     tf = ms.steering_vector_azimuth(FRAME, 1/sampling)
     frq, time, Pxx = signal.stft(cut_data, sampling, nperseg=FRAME)

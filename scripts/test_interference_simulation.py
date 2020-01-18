@@ -94,8 +94,8 @@ def separation_reflection_sound(synthetic, direct, mic, num, normal_func=None, p
     d_data, d_channels, d_samlpling, d_frames = MyFunc().wave_read_func(direct)
     r_data = s_data - d_data
 
-    s2_data = TSP(CONFIG_PATH).cut_tsp_data(use_data=s_data)
-    d2_data = TSP(CONFIG_PATH).cut_tsp_data(use_data=d_data)
+    s2_data = TSP(CONFIG_PATH).cut_up_tsp_data(use_data=s_data)
+    d2_data = TSP(CONFIG_PATH).cut_up_tsp_data(use_data=d_data)
     # r2_data = TSP(CONFIG_PATH).cut_tsp_data(use_data=r_data)
 
     '''ICA'''
