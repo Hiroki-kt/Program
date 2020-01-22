@@ -17,7 +17,7 @@ class ExecuteSVR(PrametricEigenspace):
         self.data_set = np.load(data_set_file_path)
         print("### Data Name: ", self.data_name)
         print("### Data Set Shape: ", self.data_set.shape)
-        if use_mic_id >= 9:
+        if use_mic_id >= 9 and use_mic_id <= 12:
             self.x, self.x_test, self.y, self.y_test = self.split_train_test_only_one_data(use_mic_id-9, use_test_num)
         elif use_mic_id == -1:
             x, x_test, self.y, self.y_test = self.split_train_test_only_one_data(0, use_test_num)
@@ -85,7 +85,7 @@ class ExecuteSVR(PrametricEigenspace):
         joblib.dump(svr_model, path + file_name)
         return svr_model
     
-    def model_check(self, model):
+    def model_check(self, model, num=90):
         train_indices = next(self.gen_cv())[0]
         valid_indices = next(self.gen_cv())[1]
         model.fit(self.x[train_indices, :], self.y[train_indices])
@@ -102,8 +102,8 @@ class ExecuteSVR(PrametricEigenspace):
         # print(model.predict(self.x[0:90]))
         
         plt.figure()
-        plt.plot(self.DIRECTIONS, model.predict(self.x_test[0:90]), '.', label="Estimated (SVR)")
-        plt.plot(self.DIRECTIONS, self.y_test[0:90], label="True")
+        plt.plot(self.DIRECTIONS, model.predict(self.x_test[0:num]), '.', label="Estimated (SVR)")
+        plt.plot(self.DIRECTIONS, self.y_test[0:num], label="True")
         plt.xlabel('True azimuth angle [deg]')
         plt.ylabel('Estimate azimuth angle [deg]')
         plt.legend()
@@ -111,13 +111,13 @@ class ExecuteSVR(PrametricEigenspace):
         img_path = self.make_dir_path(img=True)
         plt.savefig(img_path + 'svr_' + self.data_name + '.png')
         
-        test_num = random.randint(-45, 45)
+        # test_num = random.randint(-45, 45)
         # print()
         # print("3つのデータの平均を出力")
         # print(test_num)
         # print(np.average(model.predict(self.x[test_num + 49:test_num + 52])))
         
-        print('### RMSE', np.sqrt(mean_squared_error(self.y[0:90], model.predict(self.x[0:90]))))
+        print('### RMSE', np.sqrt(mean_squared_error(self.y_test[0:num], model.predict(self.x_test[0:num]))))
         print("### R2 score", model.score(self.x_test, self.y_test))
     
     def pca_check(self):
@@ -125,9 +125,19 @@ class ExecuteSVR(PrametricEigenspace):
 
 
 if __name__ == '__main__':
-    data_set_file = '../../_array/200117/191015_PTs01_freq_0.npy'
-    model_file = '../../_array/200117/191015_PTs_freq_all_svr.pkl'
+    data_set_file_path = '../../_array/200119/'
+    config_path = '../config_'
+    model_file = '../../_array/200119/svr_191015_STs01.pkl'
+    
+    data_name = '191015_STs01'
+
+    data_set_file = data_set_file_path + data_name + '.npy'
+    output_file = 'svr_' + data_name + '.pkl'
+    config_file = config_path + data_name + '.ini'
+    
     # if use mic id is '9-11' make test data for torn using mic data, use test num 800 = '9', 1000 = '10', 2000 = '11'
     # if use mic id is '-1' make test data for torn useing three data
     # else select 0 ~ 8, you can make data set using id's mic
-    es = ExecuteSVR(data_set_file, use_mic_id=0, use_test_num=2)
+    # if use beamforming data use_mic_id is direction of data
+    es = ExecuteSVR(data_set_file, use_mic_id=0, use_test_num=2, use_model_file=model_file,
+                    output_file_name=output_file, config_name=config_file)

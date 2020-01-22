@@ -14,6 +14,7 @@ class CreateDataSet(MyFunc):
         super().__init__()
         config = ConfigParser()
         config.read(config_path)
+        self.config_path = config_path
         # Data param
         self.freq_max = int(config['Data']['Freq_Max'])
         self.freq_min = int(config['Data']['Freq_Min'])
@@ -27,7 +28,6 @@ class CreateDataSet(MyFunc):
         # Label param
         self.label_max = int(config['Label']['Label_Max'])
         label_min = int(config['Label']['Label_Min'])
-        self.label_step = int(config['Label']['Label_Step'])
         self.DIRECTIONS = np.arange(label_min, self.label_max)
         # Speaker sound
         file_name = config['Speaker_Sound']['File']
@@ -57,17 +57,23 @@ class CreateDataSet(MyFunc):
             self.tone_sigal()
         elif self.sound_kind == 'Ts':
             if self.target == 'None':
-                self.tsp_signal(impulse=impulse)
+                self.tsp_signal(impulse)
+            elif self.target == 'App':
+                app_config = ConfigParser()
+                app_config.read(self.config_path)
+                object_kind = app_config['Data']['Object']
+                size = app_config['Data']['Size']
+                self.tsp_signal(impulse, real_num=8, app='_' + object_kind + '_' + size)
             else:
                 self.tsp_signal_individually()
         else:
             print("Error")
             sys.exit()
 
-    def tsp_signal(self, impulse=False):
+    def tsp_signal(self, impulse, real_num=7, app=None):
         tsp = TSP('../config_tf.ini')
-        recode_data_directory = self.data_search(self.date, self.sound_kind, self.geometric,
-                                                             plane_wave=self.plane_wave)
+        recode_data_directory = self.data_search(self.date, self.sound_kind, self.geometric, app,
+                                                 plane_wave=self.plane_wave)
         wave_path = self.recode_data_path + recode_data_directory
         print(wave_path)
         print("Making data set....")
@@ -96,7 +102,10 @@ class CreateDataSet(MyFunc):
                 sound_data = np.delete(sound_data, [0, 5], 0)
                 start_time = self.zero_cross(sound_data, 128, sampling, 512, self.origin_frames, up=True)
                 if start_time < 0:
-                    start_time = 0
+                    if real_num != self.data_num:
+                        start_time = start_time + self.origin_frames
+                    else:
+                        start_time = 0
                 cut_data = sound_data[:, start_time: int(start_time + self.origin_frames * self.data_num)]
                 cut_data = np.reshape(cut_data, (self.mic_num, self.data_num, -1))
                 fft_data = np.fft.rfft(cut_data)
@@ -112,6 +121,11 @@ class CreateDataSet(MyFunc):
                     print("Rate ", sampling)
                     print("#######################")
                     
+                    plt.figure()
+                    plt.specgram(cut_data[0, 0, :], Fs=sampling)
+                    plt.title("cut_data確認用")
+                    plt.show()
+                    
                 for data_id in range(cut_data.shape[1]):
                     for mic in range(cut_data.shape[0]):
                         smooth_data = np.convolve(np.abs(fft_data[mic, data_id, self.freq_min_id:self.freq_max_id]),
@@ -125,7 +139,7 @@ class CreateDataSet(MyFunc):
                 print('finish: ', data_dir + self.label_max + 1, '/', len(self.DIRECTIONS))
             print('Made data set: ', data_set.shape)
             output_path = self.make_dir_path(array=True)
-            np.save(output_path + recode_data_directory.strip('/') + '_freq_7000', data_set)
+            np.save(output_path + recode_data_directory.strip('/'), data_set)
 
     def tsp_signal_individually(self):
         wave_path = self.recode_data_path + self.data_search(self.date, self.sound_kind, self.geometric,
@@ -187,7 +201,7 @@ class CreateDataSet(MyFunc):
             print('***********************************************')
         print('Made data set: ', data_set.shape)
         output_path = self.make_dir_path(array=True)
-        np.save(output_path + self.target + '_beam.npy', data_set)
+        np.save(output_path + self.sound_kind + '.npy', data_set)
         
     def tone_sigal(self):
         wave_path = self.recode_data_path + self.data_search(self.date, self.sound_kind, self.geometric,
@@ -230,6 +244,6 @@ class CreateDataSet(MyFunc):
 
 
 if __name__ == '__main__':
-    config_ini = '../config_191015_PTs01_freq_7000.ini'
+    config_ini = '../config_200121_PTs06_glass_200_400.ini'
     cd = CreateDataSet(config_ini)
     cd()

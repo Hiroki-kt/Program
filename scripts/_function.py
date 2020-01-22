@@ -155,11 +155,11 @@ class MyFunc:
             count += 1
         # plt.figure()
         # plt.plot(time_list, zero_cross)
-        # plt.ylim(200, 1000)
-        # plt.xlim(0, 1.2)
+        # plt.ylim(0, 1000)
         # plt.show()
         if up:
-            peak = signal.argrelmax(np.array(zero_cross), order=10)
+            peak = signal.argrelmax(np.array(zero_cross), order=5)
+            # print(peak)
             time_id = peak[0][np.argmax(np.array(zero_cross)[peak])]
         else:
             peak = signal.argrelmax(np.array(zero_cross), order=10)
@@ -173,7 +173,7 @@ class MyFunc:
         return freq_id
     
     @staticmethod
-    def data_search(date, sound_kind, geometric, plane_wave=True, calibration=False):
+    def data_search(date, sound_kind, geometric, app, plane_wave=True, calibration=False):
         if plane_wave:
             speaker = 'P'
         else:
@@ -187,7 +187,10 @@ class MyFunc:
             else:
                 return 'C_' + dir_name + '/10.wav'
         else:
-            return dir_name + '/'
+            if app is not None:
+                return dir_name + app + '/'
+            else:
+                return dir_name + '/'
         
     @staticmethod
     def mic_positions(mic_r, mic_num, start, clockwise=False):

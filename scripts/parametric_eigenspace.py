@@ -24,7 +24,7 @@ class PrametricEigenspace(MyFunc):
         super().__init__()
         config = ConfigParser()
         config.read(config_path)
-        self.data_name = config_path.strip('.ini').strip('../config')
+        self.data_name = config_path.strip('.ini').strip('../config_')
         # Data param
         # self.date = config['Data']['Date']
         # self.sound_kind = config['Data']['Sound_Kind']
@@ -36,7 +36,6 @@ class PrametricEigenspace(MyFunc):
         # Label param
         label_max = int(config['Label']['Label_Max'])
         label_min = int(config['Label']['Label_Min'])
-        self.label_step = int(config['Label']['Label_Step'])
         self.DIRECTIONS = np.arange(label_min, label_max)
         # Speaker sound
         file_name = config['Speaker_Sound']['File']
