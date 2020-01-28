@@ -35,7 +35,7 @@ class ExecuteSVR(PrametricEigenspace):
         else:
             model = joblib.load(use_model_file)
         self.model_check(model)
-        self.pca_check()
+        # self.pca_check()
     
     def split_train_test(self, mic, test_num):
         x = np.empty((0, self.data_set.shape[3]), dtype=np.float)
@@ -76,19 +76,16 @@ class ExecuteSVR(PrametricEigenspace):
         params = {"C": np.logspace(0, 2, params_cnt), "epsilon": np.logspace(-1, 1, params_cnt)}
         gridsearch = GridSearchCV(SVR(), params, cv=self.gen_cv(), scoring="r2", return_train_score=True)
         gridsearch.fit(self.x, self.y)
-        # print("C, εのチューニング")
-        # print("最適なパラメーター =", gridsearch.best_params_)
-        # print("精度 =", gridsearch.best_score_)
-        # print()
+        print("C, εのチューニング")
+        print("最適なパラメーター =", gridsearch.best_params_)
+        print("精度 =", gridsearch.best_score_)
+        print()
         svr_model = SVR(C=gridsearch.best_params_["C"], epsilon=gridsearch.best_params_["epsilon"])
-        path = self.make_dir_path(array=True)
-        joblib.dump(svr_model, path + file_name)
-        return svr_model
-    
-    def model_check(self, model, num=90):
         train_indices = next(self.gen_cv())[0]
         valid_indices = next(self.gen_cv())[1]
-        model.fit(self.x[train_indices, :], self.y[train_indices])
+        svr_model.fit(self.x[train_indices, :], self.y[train_indices])
+        path = self.make_dir_path(array=True)
+        joblib.dump(svr_model, path + file_name)
         # テストデータの精度を計算
         # print("テストデータにフィット")
         # print("テストデータの精度 =", model.score(self.x_test, self.y_test))
@@ -96,20 +93,32 @@ class ExecuteSVR(PrametricEigenspace):
         # print("※参考")
         # print("訓練データの精度 =", model.score(self.x[train_indices, :], self.y[train_indices]))
         # print("交差検証データの精度 =", model.score(self.x[valid_indices, :], self.y[valid_indices]))
-        
+
         # print()
         # print("結果")
         # print(model.predict(self.x[0:90]))
-        
+        return svr_model
+    
+    def model_check(self, model, num=90):
         plt.figure()
-        plt.plot(self.DIRECTIONS, model.predict(self.x_test[0:num]), '.', label="Estimated (SVR)")
-        plt.plot(self.DIRECTIONS, self.y_test[0:num], label="True")
+        plt.plot(self.DIRECTIONS, model.predict(self.x_test[:num]), '.', label="Estimated (SVR)")
+        plt.plot(self.DIRECTIONS, self.y_test[:num], label="True")
         plt.xlabel('True azimuth angle [deg]')
         plt.ylabel('Estimate azimuth angle [deg]')
         plt.legend()
         # plt.show()
         img_path = self.make_dir_path(img=True)
         plt.savefig(img_path + 'svr_' + self.data_name + '.png')
+
+        # plt.figure()
+        # plt.plot(self.DIRECTIONS, abs(model.predict(self.x_test[0:num]) - self.y_test[0:num]), 'o')
+        # plt.xlabel('True azimuth angle [deg]')
+        # plt.ylabel('Absolute value of error [deg]')
+        # plt.ylim(0, 40)
+        # # plt.legend()
+        # # plt.show()
+        # img_path = self.make_dir_path(img=True)
+        # plt.savefig(img_path + 'svr_error_' + self.data_name + '.png')
         
         # test_num = random.randint(-45, 45)
         # print()
@@ -123,13 +132,21 @@ class ExecuteSVR(PrametricEigenspace):
     def pca_check(self):
         self.pca(self.x, self.y)
 
+    def estimate_azimuth(self, model, test_num=random.randint(-45, 45)):
+        train_indices = next(self.gen_cv())[0]
+        model.fit(self.x[train_indices, :], self.y[train_indices])
+        print()
+        print("3つのデータの平均を出力")
+        print(test_num)
+        print(np.average(model.predict(self.x[test_num + 49:test_num + 52])))
+
 
 if __name__ == '__main__':
-    data_set_file_path = '../../_array/200119/'
+    data_set_file_path = '../../_array/200123/'
     config_path = '../config_'
-    model_file = '../../_array/200119/svr_191015_STs01.pkl'
+    model_file = '../../_array/200125/svr_200121_PTs06_cardboard_200_400.pkl'
     
-    data_name = '191015_STs01'
+    data_name = '200121_PTs06_glass_200_400'
 
     data_set_file = data_set_file_path + data_name + '.npy'
     output_file = 'svr_' + data_name + '.pkl'
@@ -139,5 +156,9 @@ if __name__ == '__main__':
     # if use mic id is '-1' make test data for torn useing three data
     # else select 0 ~ 8, you can make data set using id's mic
     # if use beamforming data use_mic_id is direction of data
-    es = ExecuteSVR(data_set_file, use_mic_id=0, use_test_num=2, use_model_file=model_file,
-                    output_file_name=output_file, config_name=config_file)
+    es = ExecuteSVR(data_set_file,
+                    use_mic_id=0,
+                    use_test_num=2,
+                    use_model_file=model_file,
+                    output_file_name=output_file,
+                    config_name=config_file)

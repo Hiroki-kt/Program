@@ -31,5 +31,10 @@ for i in freq_list:
     data_set_file = data_set_file_path + data_name + str(i) + '.npy'
     output_file = 'svr_' + data_name + str(i) + '.pkl'
     config_file = config_path + data_name + str(i) + '.ini'
-    es = ExecuteSVR(data_set_file, use_mic_id=0, use_test_num=2, output_file_name=output_file, config_name=config_file)
+    es = ExecuteSVR(data_set_file,
+                    use_mic_id=0,
+                    use_test_num=2,
+                    output_file_name=output_file,
+                    # use_model_file=model_file,
+                    config_name=config_file)
     print("*******************************")

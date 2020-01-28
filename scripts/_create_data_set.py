@@ -96,7 +96,7 @@ class CreateDataSet(MyFunc):
         else:
             data_set = np.zeros((len(self.DIRECTIONS), self.mic_num, self.data_num, self.data_set_freq_len),
                                 dtype=np.float)
-            print('Need Number', self.origin_frames * 1.2)
+            print('Need Number', self.origin_frames)
             for data_dir in self.DIRECTIONS:
                 sound_data, channel, sampling, frames = self.wave_read_func(wave_path + str(data_dir) + '.wav')
                 sound_data = np.delete(sound_data, [0, 5], 0)
@@ -141,9 +141,9 @@ class CreateDataSet(MyFunc):
             output_path = self.make_dir_path(array=True)
             np.save(output_path + recode_data_directory.strip('/'), data_set)
 
-    def tsp_signal_individually(self):
-        wave_path = self.recode_data_path + self.data_search(self.date, self.sound_kind, self.geometric,
-                                                             plane_wave=self.plane_wave)
+    def tsp_signal_individually(self, app=None):
+        recode_path = self.data_search(self.date, self.sound_kind, self.geometric, app, plane_wave=self.plane_wave)
+        wave_path = self.recode_data_path + recode_path
         print(wave_path)
         if self.beam:
             data_set = np.zeros((len(self.DIRECTIONS), len(self.ms.ss_list), self.data_num, self.data_set_freq_len),
@@ -201,7 +201,7 @@ class CreateDataSet(MyFunc):
             print('***********************************************')
         print('Made data set: ', data_set.shape)
         output_path = self.make_dir_path(array=True)
-        np.save(output_path + self.sound_kind + '.npy', data_set)
+        np.save(output_path + recode_path.strip('/'), data_set)
         
     def tone_sigal(self):
         wave_path = self.recode_data_path + self.data_search(self.date, self.sound_kind, self.geometric,
@@ -244,6 +244,6 @@ class CreateDataSet(MyFunc):
 
 
 if __name__ == '__main__':
-    config_ini = '../config_200121_PTs06_glass_200_400.ini'
+    config_ini = '../config_200128_PTs07_kuka_distance_250.ini'
     cd = CreateDataSet(config_ini)
     cd()
