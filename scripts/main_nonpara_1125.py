@@ -72,26 +72,26 @@ class NonParametric(PrametricEigenspace):
     def svr_ver2(self, gridsearch):
         if isinstance(gridsearch, SVR):
             print("OK")
-            regr = gridsearch
+            model = gridsearch
         elif isinstance(gridsearch, GridSearchCV):
             print("OK!!!")
-            regr = SVR(C=gridsearch.best_params_["C"], epsilon=gridsearch.best_params_["epsilon"])
+            model = SVR(C=gridsearch.best_params_["C"], epsilon=gridsearch.best_params_["epsilon"])
         else:
             print("Error")
             sys.exit()
         train_indices = next(self.gen_cv())[0]
         # print(train_indices)
         valid_indices = next(self.gen_cv())[1]
-        regr.fit(self.x[train_indices, :], np.array(self.y)[train_indices])
+        model.fit(self.x[train_indices, :], np.array(self.y)[train_indices])
         # テストデータの精度を計算
         print("テストデータにフィット")
-        print("テストデータの精度 =", regr.score(self.x_test, self.y_test))
+        print("テストデータの精度 =", model.score(self.x_test, self.y_test))
         print()
         print("※参考")
-        print("訓練データの精度 =", regr.score(self.x[train_indices, :], np.array(self.y)[train_indices]))
-        print("交差検証データの精度 =", regr.score(self.x[valid_indices, :], np.array(self.y)[valid_indices]))
+        print("訓練データの精度 =", model.score(self.x[train_indices, :], np.array(self.y)[train_indices]))
+        print("交差検証データの精度 =", model.score(self.x[valid_indices, :], np.array(self.y)[valid_indices]))
         print()
-        return regr
+        return model
     
 
 if __name__ == '__main__':
