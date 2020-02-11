@@ -210,6 +210,7 @@ class WaveFft():
 
         return x
 
+
 if __name__ == '__main__':
     '''
     frame = "wavファイルのパス"
@@ -217,57 +218,70 @@ if __name__ == '__main__':
     # frame = './test.wav'
     # frame = '../1.0/wh_1_45.wav'
     # frame = '../Experiment/190509/Test_wav/only_direct.wav'
-    frame = '../Experiment/190509/Test_wav/ref_25_70.wav'
+    frame = '../../_exp/Speaker_Sound/up_tsp_1num.wav'
     # frame = '../Experiment/190509/environment/origin_sound.wav'
 
+    wf = WaveFft(frame)
+    sound_data = wf.waveLoad()
+    print(sound_data.shape)
+    
+    plt.figure()
+    plt.specgram(sound_data, Fs=44100, cmap='jet')
+    plt.ylim(0, 8000)
+    plt.clim(0, 60)
+    plt.xlabel('Time [s]')
+    plt.ylabel('Frequency [Hz]')
+    plt.colorbar()
+    plt.show()
+    
     '''
-    パラメータ
-    '''
-    fft = WaveFft(frame)
-    size = 1024
-    # 窓関数はハミング
-    hammingWindow = np.hamming(size)
-    fs = 44100
-    d = 1 / fs
-    freqList = np.fft.fftfreq(size, d)
-
-    '''
-    関数使用
-    '''
-    # fft.fft(0, size)
-    stft_data = fft.stft(size, hammingWindow)
-    resyn_data = fft.istft(stft_data, hammingWindow)  # shape = (frame, )
-    line = [0,4,8,12,16,20,24,28]
-    second = 2
-    X = np.zeros((len(line), int(second * fft.frame_per_time), fft.N), dtype = np.complex64)
-    for i in line:
-        x = fft.separateSound(stft_data, second, i, 1, False)
-        # print(x.shape)
-        X[int(i/4), :, :] = x
-    print("データサイズ：", X.shape)
-
-    '''
-    プロット
-    '''
-    for i in range(8):
-        ### スペクトログラム
-        plt.imshow(abs(X[i, :, 15:23].T), aspect="auto", origin="lower")
-        plt.title("Spectrogram", fontsize=20)
-
-        ### 振幅の大きさ平均計算、プロット
-        avg = np.average(abs(X[i, :, :]), axis = 0)
-        # plt.plot(freqList, avg)
-        ### 極値検出, プロット
-        maxid = signal.argrelmax(avg[15:23], order=100) # 全体としてタプル形ではあるが、中身はarrayになってる。
-        print("max", avg[15:23][maxid[0]])
-        print(avg[15:23])
-        # plt.plot(freqList[maxid], avg[maxid], 'ro')
-
-        ### プロット設定
-        # plt.axis([0, fs/16, 0, 1])
-        # plt.xlim(0, fs/16)
-        # plt.xlim(100, 1600)
-        # plt.ylim(200, 3000)
-        # plt.xlabel("Frequency[Hz]")
-        # plt.ylabel("amplitude spectrum")
-        plt.show()
+    # パラメータ
+    # '''
+    # fft = WaveFft(frame)
+    # size = 1024
+    # # 窓関数はハミング
+    # hammingWindow = np.hamming(size)
+    # fs = 44100
+    # d = 1 / fs
+    # freqList = np.fft.fftfreq(size, d)
+    #
+    # '''
+    # 関数使用
+    # '''
+    # # fft.fft(0, size)
+    # stft_data = fft.stft(size, hammingWindow)
+    # resyn_data = fft.istft(stft_data, hammingWindow)  # shape = (frame, )
+    # line = [0,4,8,12,16,20,24,28]
+    # second = 2
+    # X = np.zeros((len(line), int(second * fft.frame_per_time), fft.N), dtype = np.complex64)
+    # for i in line:
+    #     x = fft.separateSound(stft_data, second, i, 1, False)
+    #     # print(x.shape)
+    #     X[int(i/4), :, :] = x
+    # print("データサイズ：", X.shape)
+    #
+    # '''
+    # プロット
+    # '''
+    # for i in range(8):
+    #     ### スペクトログラム
+    #     plt.imshow(abs(X[i, :, 15:23].T), aspect="auto", origin="lower")
+    #     plt.title("Spectrogram", fontsize=20)
+    #
+    #     ### 振幅の大きさ平均計算、プロット
+    #     avg = np.average(abs(X[i, :, :]), axis = 0)
+    #     # plt.plot(freqList, avg)
+    #     ### 極値検出, プロット
+    #     maxid = signal.argrelmax(avg[15:23], order=100) # 全体としてタプル形ではあるが、中身はarrayになってる。
+    #     print("max", avg[15:23][maxid[0]])
+    #     print(avg[15:23])
+    #     # plt.plot(freqList[maxid], avg[maxid], 'ro')
+    #
+    #     ### プロット設定
+    #     # plt.axis([0, fs/16, 0, 1])
+    #     # plt.xlim(0, fs/16)
+    #     # plt.xlim(100, 1600)
+    #     # plt.ylim(200, 3000)
+    #     # plt.xlabel("Frequency[Hz]")
+    #     # plt.ylabel("amplitude spectrum")
+    #     plt.show()

@@ -12,7 +12,7 @@ import pyaudio
 
 class MyFunc:
     def __init__(self):
-        self.onedrive_path = '../../../../../OneDrive/Research/'
+        self.onedrive_path = '/Users/hiroki-kt/OneDrive/Research/'
         self.recode_data_path = self.onedrive_path + 'Recode_Data/'
         self.speaker_sound_path = self.onedrive_path + 'Speaker_Sound/'
         

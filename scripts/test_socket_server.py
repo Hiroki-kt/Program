@@ -1,8 +1,9 @@
 import socket
 import threading
 from datetime import datetime
+import time
 
-HOST_IP = "163.221.126.203"  # サーバーのIPアドレス
+HOST_IP = "163.221.44.222"  # サーバーのIPアドレス
 PORT = 12345  # 使用するポート
 CLIENTNUM = 3  # クライアントの接続上限数
 DATESIZE = 1024  # 受信データバイト数
@@ -17,10 +18,23 @@ class SocketServer:
         with client_socket:
             while True:
                 rcv_data = client_socket.recv(DATESIZE)  # クライアントからデータ受信
+                set_data = 'SET_OK'
+                set_data = set_data.encode('utf-8')
                 if rcv_data:
                     print('[{0}] recv date : {1}'.format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                                                          rcv_data.decode('utf-8')))
-                    client_socket.send(rcv_data)  # データ受信したデータをそのままクライアントへ送信
+                    if rcv_data.decode('utf-8') == 'initialize':
+                        time.sleep(10)
+                        # client_socket.send(rcv_data)  # データ受信したデータをそのままクライアントへ送信
+                        client_socket.send('done_initialization'.encode('utf-8'))
+                    elif rcv_data.decode('utf-8') == 'finalize':
+                        time.sleep(10)
+                        client_socket.send('done_finalization'.encode('utf-8'))
+                    else:
+                        out_data = 'SET_OK' + '_' + rcv_data.decode('utf-8')
+                        out_data = out_data.encode('utf-8')
+                        time.sleep(10)
+                        client_socket.send(out_data)
                 else:
                     break
         
