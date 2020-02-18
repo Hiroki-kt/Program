@@ -273,11 +273,11 @@ if __name__ == '__main__':
     
     d_file = '../../../../OneDrive/Research/Recode_Data/only_speaker/10.wav'
     
-    dir_name = MyFunc().data_search(191015, 'Ts', '01', plane_wave=False)
+    dir_name = MyFunc().data_search(191015, 'Ts', '01', None, plane_wave=True)
     path = MyFunc().recode_data_path + dir_name
     print(path)
     
-    d_path = MyFunc().recode_data_path + MyFunc().data_search(191015, 'Ts', '01', plane_wave=False, calibration=True)
+    d_path = MyFunc().recode_data_path + MyFunc().data_search(191015, 'Ts', '01', None, plane_wave=True, calibration=True)
     print(d_path)
     
     # directions = [-50, -40, -30, -21, -10, 0, 9, 21, 30, 40, 50]
