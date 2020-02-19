@@ -8,11 +8,15 @@ import wave
 from scipy import signal
 from datetime import datetime
 import pyaudio
+from configparser import ConfigParser
 
 
 class MyFunc:
-    def __init__(self):
-        self.onedrive_path = '/Users/hiroki-kt/OneDrive/Research/'
+    def __init__(self, pc_config='../config/pc_config.ini'):
+        # self.onedrive_path = '/Users/hiroki-kt/OneDrive/Research/'
+        config = ConfigParser()
+        config.read(pc_config)
+        self.onedrive_path = config['Path']['OneDrive']
         self.recode_data_path = self.onedrive_path + 'Recode_Data/'
         self.speaker_sound_path = self.onedrive_path + 'Speaker_Sound/'
         

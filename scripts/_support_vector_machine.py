@@ -144,7 +144,7 @@ class ExecuteSVR(PrametricEigenspace):
 
 if __name__ == '__main__':
     data_set_file_path = '/Users/hiroki-kt/OneDrive/Research/_array/200128/'
-    config_path = '../config_'
+    config_path = '../config/config_'
     model_file = '../../_array/200125/svr_200121_PTs06_cardboard_200_400.pkl'
     
     data_name = '200128_PTs07_kuka_distance_250'
