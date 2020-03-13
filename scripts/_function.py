@@ -233,6 +233,12 @@ class MyFunc:
                 return x, channels
         print('can not find:' + device_name)
         
+    @staticmethod
+    def get_frames(wave_path):
+        with wave.open(wave_path, 'r') as wave_file:
+            w_frames_num = wave_file.getnframes()
+            return w_frames_num
+        
     
 class Position(object):
     def __init__(self, r, theta):

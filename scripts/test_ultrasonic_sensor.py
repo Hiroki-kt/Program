@@ -1,6 +1,6 @@
 import time
-from matrix_lite import gpio
-# from RPI.GPIO as GPIO
+# from matrix_lite import gpio  # in case of using matrix creator
+from RPI.GPIO as gpio  # in case of usual raspberry pi
 
 class UltraSonicSensor:
     def __init__(self, trig, echo):

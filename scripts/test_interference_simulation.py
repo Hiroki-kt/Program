@@ -88,7 +88,7 @@ def reflection_interference(wave_file, mic2wall_dis, mic, sound_speed=340):
 
 
 def separation_reflection_sound(synthetic, direct, mic, num, normal_func=None, peak_normal=None, plot=False):
-    CONFIG_PATH = "./config_tf.ini"
+    CONFIG_PATH = "../config/config_tf.ini"
     
     s_data, s_channels, s_samlpling, s_frames = MyFunc().wave_read_func(synthetic)
     d_data, d_channels, d_samlpling, d_frames = MyFunc().wave_read_func(direct)
@@ -273,11 +273,11 @@ if __name__ == '__main__':
     
     d_file = '../../../../OneDrive/Research/Recode_Data/only_speaker/10.wav'
     
-    dir_name = MyFunc().data_search(191015, 'Ts', '01', None, plane_wave=True)
+    dir_name = MyFunc().data_search(200214, 'Ts', '10', None, plane_wave=True)
     path = MyFunc().recode_data_path + dir_name
     print(path)
     
-    d_path = MyFunc().recode_data_path + MyFunc().data_search(191015, 'Ts', '01', None, plane_wave=True, calibration=True)
+    d_path = MyFunc().recode_data_path + MyFunc().data_search(191015, 'Ts', '01', None, plane_wave=False, calibration=True)
     print(d_path)
     
     # directions = [-50, -40, -30, -21, -10, 0, 9, 21, 30, 40, 50]
@@ -299,11 +299,11 @@ if __name__ == '__main__':
     # plt.show()
     
     plt.figure()
-    # plt.plot(directions, min_list, label="1000Hz")
+    plt.plot(directions, min_list, label="1000Hz")
     plt.plot(directions, max_list, label="2000Hz")
-    plt.xlabel('Azimuth [deg]')
-    plt.ylabel('Amplitude')
-    plt.legend()
+    plt.xlabel('Azimuth [deg]', fontsize=15)
+    plt.ylabel('Amplitude', fontsize=15)
+    plt.legend(fontsize=15)
     plt.show()
     #
     plt.plot(directions, np.array(min_list)/np.array(max_list), label='D')
